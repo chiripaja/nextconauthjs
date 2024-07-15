@@ -1,51 +1,64 @@
-
+import Credentials from "next-auth/providers/credentials"
+import type { NextAuthConfig } from "next-auth"
 import axios from "axios";
-import type { NextAuthConfig } from "next-auth";
-import Credentials from "next-auth/providers/credentials";
-
+import { UserRole } from "./type/types";
+ 
 // Notice this is only an object, not a full Auth.js instance
 export default {
   providers: [
     Credentials({
-        // You can specify which fields should be submitted, by adding keys to the `credentials` object.
-        // e.g. domain, username, password, 2FA token, etc.
-        credentials: {
-          username: {},
-          password: {},
-        },
+      // You can specify which fields should be submitted, by adding keys to the `credentials` object.
+      // e.g. domain, username, password, 2FA token, etc.
+      credentials: {
+        username: {},
+        password: {},
+      },
+      
+      authorize: async (credentials) => {
+        let user = null
         
-        authorize: async (credentials) => {
-          let user = null
-          console.log({credentials})
-          if(credentials===null) return null;
-          // logic to salt and hash password
-          // logic to verify if user exists
-          try {
-            const {data} =await axios.post('http://localhost:3002/api/user/auth', {
-              usuario: credentials?.username,
-              password: credentials?.password,
-            })
-            if(data){
-              console.log("entro al if")
-              user={ id:data.id, name: data.usuario, email: data.password }
-            }
-            
-          } catch (error) {
-            console.log("enrto al catch")
-            throw new Error("User not found.")
-          }
+        if(credentials===null) return null;
+       
+        try {
+          const {data} =await axios.post(`${process.env.apiurl}/Usuario/VerificaAcceso`, {
+            usuario: credentials?.username,
+            clave: credentials?.password
+          })
+      
         
-  
-         
-          if (!user) {
-            // No user found, so this is their first attempt to login
-            // meaning this is also the place you could do registration
-            throw new Error("User not found.")
-          }
-   
-          // return user object with the their profile data
-          return user
-        },
-      }),
+          if(data){
+            user={ id:data.empleado.idEmpleado, name: data.empleado.nombres, email:data.empleado.dni,roles:data.empleado.roles}
+           
+          }          
+        } catch (error) {
+          throw new Error("User not found.")
+        }
+      
+
+       
+        if (!user) {
+          throw new Error("User not found.")
+        }
+ 
+        return user
+      },
+    }),
   ],
-} satisfies NextAuthConfig;
+  
+  callbacks: {
+    jwt({ token, user }) {
+      if (user) { 
+ 
+        token.id = user.id,
+        token.roles=user.roles  as UserRole[]
+        token.roles = user.roles as UserRole[]
+      }
+      return token
+    },
+    session({ session, token }) {
+      session.user.id = token.id as string
+      session.user.roles=token.roles  as UserRole[]
+      return session
+    },
+  },
+} satisfies NextAuthConfig
