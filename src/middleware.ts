@@ -34,7 +34,7 @@ export default auth((req: any) => {
 
     if (requiredRoles && !requiredRoles.some((role:any) => userRoles.some(userRole => userRole.nombre === role))) {
       // Redirigir a una página de acceso denegado o a la página de inicio
-      return NextResponse.redirect(new URL("/access-denied", nextUrl));
+      return NextResponse.redirect(new URL("/accessdenied", nextUrl));
     }
   
     return NextResponse.next();

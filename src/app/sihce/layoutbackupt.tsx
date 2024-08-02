@@ -8,12 +8,12 @@ export default function SihceLayout({
 }) {
   return (
     <>
- 
+    <Sidebar />
         
     {/* Main Layout content - Contenido principal del Layout */}
- 
+    <div className="ml-auto mb-6 lg:w-[75%] xl:w-[80%] 2xl:w-[85%] min-h-screen bg-slate-300 ">
       
-      <TopMenu2 />
+      <TopMenu />
 
       {/* TODO: Contenido en el Layout.tsx */}
       <div className="flex-1 p-4 flex justify-center items-center">
@@ -22,7 +22,7 @@ export default function SihceLayout({
             {children}
           </div>
         </div>
-
+    </div>
   </>
   );
 }

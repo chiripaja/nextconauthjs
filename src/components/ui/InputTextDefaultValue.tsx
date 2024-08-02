@@ -1,16 +1,18 @@
 import React, { forwardRef } from 'react';
 interface InputTextProps extends React.InputHTMLAttributes<HTMLInputElement>{
-    label: string;
-    value?: string;
-    readOnly?: boolean;
-    defaultValue?: string;
-    onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  label?: string;
+  value?: string;
+  requerido?:boolean;
+  readOnly?: boolean;
+  defaultValue?: string;
+  unidadMedida?:string;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 export const InputText = forwardRef<HTMLInputElement, InputTextProps>(
-  ({ label, defaultValue = "", readOnly = false , ...props }, ref) => {
+  ({ unidadMedida="",label="", defaultValue = "",requerido=false, readOnly = false , ...props }, ref) => {
     return (
-      <div className="relative h-11 w-full min-w-[200px]">
+      <div className="relative h-11 w-full min-w-[200px] border-slate-900">
         <input
           ref={ref}
           readOnly={readOnly}

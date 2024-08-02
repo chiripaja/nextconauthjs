@@ -47,8 +47,7 @@ export default {
   
   callbacks: {
     jwt({ token, user }) {
-      if (user) { 
- 
+      if (user) {  
         token.id = user.id,
         token.roles=user.roles  as UserRole[]
         token.roles = user.roles as UserRole[]

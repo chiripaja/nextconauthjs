@@ -8,3 +8,4 @@ export * from './ui/TopMenu'
 
 
 export * from './auth/AuthProvider'
+export * from './PrelineScript'

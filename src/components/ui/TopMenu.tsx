@@ -3,6 +3,8 @@ import { CiSearch, CiMenuBurger, CiChat1, CiBellOn } from 'react-icons/ci';
 
 export const TopMenu = () => {
   return (
+    <>
+   
     <div className="sticky z-10 top-0 h-16 border-b bg-white lg:py-2.5">
 
       <div className="px-6 flex items-center justify-between space-x-4">
@@ -33,5 +35,6 @@ export const TopMenu = () => {
         </div>
       </div>
     </div>
+    </>
   )
 }
