@@ -31,7 +31,7 @@ export const Login = () => {
         console.log(dataveraxios.data)*/
         try {
             const response = await docredentials(usuario, clave)
-
+            
             if (!!response.error) {
                 MySwal.fire({
                     title: "Error",
@@ -39,7 +39,7 @@ export const Login = () => {
                     icon: "error",
                   });
             } else {
-                router.push("/sihce/admision")
+                router.push("/sihce/inicio")
             }
         } catch (error) {
             MySwal.fire({

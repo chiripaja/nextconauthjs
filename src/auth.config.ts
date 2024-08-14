@@ -16,7 +16,7 @@ export default {
       
       authorize: async (credentials) => {
         let user = null
-        
+      
         if(credentials===null) return null;
        
         try {
@@ -24,11 +24,9 @@ export default {
             usuario: credentials?.username,
             clave: credentials?.password
           })
-      
-        
+
           if(data){
-            user={ id:data.empleado.idEmpleado, name: data.empleado.nombres, email:data.empleado.dni,roles:data.empleado.roles}
-           
+            user={ id:data.empleado.idEmpleado, name: data.empleado.nombres+' '+data.empleado.apellidoPaterno +' '+data.empleado.apellidoMaterno, email:data.empleado.dni,roles:data.empleado.roles}           
           }          
         } catch (error) {
           throw new Error("User not found.")
@@ -46,7 +44,7 @@ export default {
   ],
   
   callbacks: {
-    jwt({ token, user }) {
+    async jwt({ token, user }) {
       if (user) {  
         token.id = user.id,
         token.roles=user.roles  as UserRole[]
@@ -54,10 +52,18 @@ export default {
       }
       return token
     },
-    session({ session, token }) {
+    async session({ session, token }) {
       session.user.id = token.id as string
       session.user.roles=token.roles  as UserRole[]
+      console.log("****session******")  
+      console.log(session)
       return session
     },
+    async redirect({ url, baseUrl }) {
+      return baseUrl
+    },
+  },
+  pages: {
+    signOut: '/login', 
   },
 } satisfies NextAuthConfig

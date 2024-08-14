@@ -54,7 +54,8 @@ export const ModuloAdmision = () => {
     const [citas, setCitas] = useState<Cita[]>([]);
     const [consultorio, setConsultorio] = useState<Cita[]>()
     const [isLoading, setIsLoading] = useState<boolean>(false);
-const [daysToShow, setDaysToShow] = useState(15);
+    const [daysToShow, setDaysToShow] = useState(15);
+    const [TextoLoading, settextoLoading] = useState("----")
     const today = new Date();
 
     const ver = async (id: string, fecha: any) => {
@@ -64,12 +65,12 @@ const [daysToShow, setDaysToShow] = useState(15);
         setConsultorio(especilidadDatos)
     }
 
+
     const fetchProducts = async () => {
         setIsLoading(true);
         try {
             const response = await axios.get(`${process.env.apiurl}/Admision/CuposLibres`);
             const data = response.data;
-            const citasConCupo = data.filter((item: Cita) => parseInt(item.cupos_Libres) > 0);
             setCitas(data);
         } catch (error) {
             console.error('Error fetching products:', error);
@@ -78,16 +79,43 @@ const [daysToShow, setDaysToShow] = useState(15);
         }
     };
 
+    const fetchProductsActualizacionPosterior = async () => {
+        settextoLoading("cargando");
+
+        try {
+            const response = await axios.get(`${process.env.apiurl}/Admision/CuposLibres`);
+            const data = response.data;
+
+            setCitas(data);
+        } catch (error) {
+            console.error('Error fetching products:', error);
+        } finally {
+            settextoLoading("termino la carga");
+        }
+    }
+
     useEffect(() => {
         fetchProducts();
     }, []);
 
+
+
+    useEffect(() => {
+        /* fetchProductsActualizacionPosterior();
+         const intervalId = setInterval(() => {
+             fetchProductsActualizacionPosterior();
+         }, 30000); // 20000 ms = 20 segundos
+          // Limpia el intervalo cuando el componente se desmonte
+         return () => clearInterval(intervalId);*/
+    }, [])
+
+
     const citasAgrupadas = agruparYCuposLibres(citas);
     const fechas = generarFechas(citas);
-    
+
     return (
         <div className="m-3 p-3 bg-white rounded">
-
+            <h1>{TextoLoading}</h1>
             {isLoading ? (
                 <div className="flex justify-center items-center h-screen">
                     <div className="rounded-full h-20 w-20 bg-blue-600 animate-ping"></div>
@@ -95,20 +123,20 @@ const [daysToShow, setDaysToShow] = useState(15);
             ) : (
                 <div className="grid grid-cols-12 gap-4">
                     <div className="col-span-12">
-                        <div className="grid grid-cols-2">
+                        <div className="grid grid-cols-2 gap-8">
                             <button
                                 type="button"
-                                className="w-full py-3 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none"
+                                className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-105"
                                 onClick={() => setDaysToShow(Math.ceil(fechas.length / 2))} // Mostrar 50% (15 días)
                             >
-                                15 días
+                                Mostrar Citas Proximas
                             </button>
                             <button
                                 type="button"
-                                className="w-full py-3 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-red-600 text-white hover:bg-blue-700 focus:outline-none focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none"
+                                className="bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-105"
                                 onClick={() => setDaysToShow(fechas.length)} // Mostrar 100% (30 días)
                             >
-                                30 días
+                                Mostrar Total Citas
                             </button>
                         </div>
                     </div>
@@ -139,10 +167,8 @@ const [daysToShow, setDaysToShow] = useState(15);
                                                 <td key={fecha} className="p-1">
                                                     {citasAgrupadas[parseInt(idEspecialidad)][fecha] ? (
                                                         citasAgrupadas[parseInt(idEspecialidad)][fecha].cuposLibres > 0 ? (
-                                                            <div className="bg-emerald-400 rounded text-center">
-                                                                <button onClick={() => ver(idEspecialidad, fecha)}>
-                                                                    [{citasAgrupadas[parseInt(idEspecialidad)][fecha].cuposLibres}]
-                                                                </button>
+                                                            <div onClick={() => ver(idEspecialidad, fecha)} className="cursor-pointer  text-center rounded bg-teal-500 hover:bg-teal-600 shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                                                                [{citasAgrupadas[parseInt(idEspecialidad)][fecha].cuposLibres}]
                                                             </div>
                                                         ) : (
                                                             (() => {
@@ -154,11 +180,8 @@ const [daysToShow, setDaysToShow] = useState(15);
 
                                                                 if (todayString === givenDateString) {
                                                                     return (
-                                                                        <div className="bg-orange-600 rounded text-center">
-                                                                            <button onClick={() => ver(idEspecialidad, fecha)}>
-                                                                                [0]
-                                                                            </button>
-
+                                                                        <div onClick={() => ver(idEspecialidad, fecha)} className="bg-orange-600 cursor-pointer rounded text-center hover:bg-orange-700 shadow-lg transition duration-300 ease-in-out transform hover:scale-105">
+                                                                            [0]
                                                                         </div>
                                                                     );
                                                                 } else {
@@ -185,7 +208,7 @@ const [daysToShow, setDaysToShow] = useState(15);
                             </tbody>
                         </table>
                     </div>
-                    <div className="col-span-12 md:col-span-4">
+                    <div className="col-span-12 md:col-span-4 border rounded">
                         <FormAdmision consultorio={consultorio} />
                     </div>
                 </div>

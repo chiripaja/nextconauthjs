@@ -19,7 +19,7 @@ export default function RootLayout({
   return (
     <AuthProvider>
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={`${inter.className} bg-gray-100`}>{children}</body>
       <PrelineScript />
     </html>
     </AuthProvider>

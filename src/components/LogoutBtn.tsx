@@ -6,6 +6,7 @@ import { CiLogout } from 'react-icons/ci'
 
 
 export const LogoutBtn = () => {
+
   return (
     <>
       <form
@@ -15,9 +16,9 @@ export const LogoutBtn = () => {
           redirect('/login')
         }}
       >
-        <button className="px-4 py-3 flex items-center space-x-4 rounded-md text-gray-600 group">
+        <button className="px-4 py-3 flex items-center space-x-4 rounded-md text-white group hover:text-gray-300">
           <CiLogout />
-          <span className="group-hover:text-gray-700">Logout</span>
+          <span className="">Logout</span>
         </button>
       </form>
     </>

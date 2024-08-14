@@ -11,6 +11,7 @@ import { InputWithHeader } from '../ui/InputWithHeader';
 import { InputTextTriaje } from '../ui/InputTextTriaje';
 import { SelectTriaje } from '../ui/SelectTriaje';
 import { LuAlertTriangle } from "react-icons/lu"
+import { InputWithHeaderDate } from "../ui/InputWithHeaderDate"
 
 type Input = {
     triajePulso?: string;
@@ -64,7 +65,7 @@ export const TriajeDif = () => {
     const [estadoPrioridadUnoDiastolicaAdulto, setEstadoPrioridadUnoDiastolicaAdulto] = useState<boolean>(false)
     const [estadoPrioridadUnoFRAdulto, setEstadoPrioridadUnoFRAdulto] = useState<boolean>(false)
     const [estadoPrioridadDosFR, setEstadoPrioridadDosFR] = useState<boolean>(false)
-
+    const [ActivateButton, setActivateButton] = useState(false)
 
     const [verdataJson, setVerdataJson] = useState<any>()
 
@@ -76,18 +77,17 @@ export const TriajeDif = () => {
     const InputtriajeFrecRespiratoria = watch('triajeFrecRespiratoria');
 
     const [info, setInfo] = useState<any>()
-
     const [editable, setEditable] = useState<boolean>(false)
+
+
 
     //submit busqueda
     const onSubmit2: SubmitHandler<InputBusquedad> = async (numerocuenta) => {
         try {
-
             reset()
             const { numcuenta } = numerocuenta
             const { data } = await axios.get(`${process.env.apiurl}/Triaje/SolicitaAgregar/${numcuenta}`)
-            console.log(data)
-            if (data?.triajeSolicita?.exito === 0 ) {
+            if (data?.triajeSolicita?.exito === 0) {
                 setEditable(false)
                 Swal.fire({
                     icon: "error",
@@ -95,7 +95,7 @@ export const TriajeDif = () => {
                     html: `${data?.triajeSolicita?.nroHistoria} - ${data?.triajeSolicita?.paterno} ${data?.triajeSolicita?.materno} , ${data?.triajeSolicita?.nombres}<br\>`,
                 });
             }
-            if(data?.triajeSolicita===null){
+            if (data?.triajeSolicita === null) {
                 setEditable(false)
                 Swal.fire({
                     icon: "error",
@@ -103,7 +103,7 @@ export const TriajeDif = () => {
                     html: `Ingrese numero de cuenta valido<br\>`,
                 });
             }
-            if(data?.triajeSolicita?.exito===1){
+            if (data?.triajeSolicita?.exito === 1) {
                 setEditable(true)
             }
             setInfo(data)
@@ -122,8 +122,10 @@ export const TriajeDif = () => {
 
     //submit formulario triaje
     const onSubmit: SubmitHandler<Input> = async (formData) => {
-
-
+        setActivateButton(true)
+        setTimeout(() => {
+            setActivateButton(false)
+        }, 2000);
         const datosTriaje = {
             ...formData,
             presionSist: formData.presionSist ? Number(formData.presionSist) : null,
@@ -151,6 +153,7 @@ export const TriajeDif = () => {
         if (formData?.apariencia != null || formData?.circulatorio != null || formData?.respiratorio != null) {
             idreciennacido = info?.triajeSolicita?.idAtencion
         }
+
         const dataenviar = {
             ...sanitizedData,
             gestante: {
@@ -169,38 +172,39 @@ export const TriajeDif = () => {
         }
 
 
-        console.log(dataenviar)
+
         setVerdataJson(dataenviar)
-    
+
         try {
-          const { data } = await axios.post(`${process.env.apiurl}/Triaje/Guardar`, dataenviar)
-          console.log("---------------")
-          console.log(data)
-          if (data.exito === 0) {
-            Swal.fire({
-              icon: "error",
-              title: `<h5 classname='text-base'>Error </h5>`,
-              html: `${data?.mensaje} <br\>`,
-            });
-          }
-          if (data.exito === 1) {
-            reset()
-            reset2()
-           
-            Swal.fire({
-                position: "top-end",
-                icon: "success",
-                title: "Se registro correctamente.",
-                showConfirmButton: false,
-                timer: 1500
-            });
-          }
+            const { data } = await axios.post(`${process.env.apiurl}/Triaje/Guardar`, dataenviar)
+
+            if (data.exito === 0) {
+                Swal.fire({
+                    icon: "error",
+                    title: `<h5 classname='text-base'>Error </h5>`,
+                    html: `${data?.mensaje} <br\>`,
+                });
+            }
+            if (data.exito === 1) {
+                reset()
+                reset2()
+                setInfo("")
+                Swal.fire({
+                    position: "top-end",
+                    icon: "success",
+                    title: "Se registro correctamente.",
+                    showConfirmButton: false,
+                    timer: 1500
+                });
+            }
+            setActivateButton(false)
         } catch (error) {
             Swal.fire({
                 icon: "error",
                 title: `<h5 classname='text-base'>Error </h5>`,
                 html: `${error} <br\>`,
-              });
+            });
+            setActivateButton(false)
         }/**/
     };
 
@@ -213,6 +217,7 @@ export const TriajeDif = () => {
         if (info) {
             if (info?.triajeSolicita) {
                 const { triaje } = info?.triajeSolicita
+
                 if (triaje?.triajePresion) {
                     const [presionSist, presionDiast] = triaje.triajePresion.split('/');
                     setValue('presionSist', presionSist);
@@ -227,6 +232,17 @@ export const TriajeDif = () => {
                 setValue('triajeTalla', triaje?.triajeTalla);
                 setValue('triajePerimCefalico', triaje?.triajePerimCefalico);
                 setValue('triajeSaturacion', triaje?.triajeSaturacion);
+                setValue('observaciones', triaje?.triajeObservacion);
+
+                setValue('alturaUterina', info?.triajeGestante?.alturaUterina);
+                setValue('edadGestacional', info?.triajeGestante?.edadGestacional);
+                setValue('frecCardiaca', info?.triajeGestante?.frecCardiaca);
+                setValue('fechaParto', info?.triajeGestante?.fechaParto);
+
+
+                setValue('apariencia', info?.triajeNacido?.apariencia);
+                setValue('circulatorio', info?.triajeNacido?.circulatorio);
+                setValue('respiratorio', info?.triajeNacido?.respiratorio);
             }
             setDatosTriajePaciente(info)
 
@@ -272,9 +288,12 @@ export const TriajeDif = () => {
         }
         const Sistolica = Number(InputTriajeSistolica);
         if (!isNaN(Sistolica) && Sistolica != 0) {
-            if (edad >= 30 && (Sistolica < 90 || Sistolica > 220)) {
+
+            if (info?.triajeSolicita?.edad >= 30 && (Sistolica < 90 || Sistolica > 220)) {
+
                 setEstadoPrioridadUnoSistolicaAdulto(true)
             } else {
+
                 setEstadoPrioridadUnoSistolicaAdulto(false)
             }
         } else {
@@ -282,7 +301,8 @@ export const TriajeDif = () => {
         }
         const Diastolica = Number(InputTriajeDiastolica);
         if (!isNaN(Diastolica) && Diastolica != 0) {
-            if (edad >= 30 && (Diastolica > 110)) {
+            if (info?.triajeSolicita?.edad >= 30 && (Diastolica > 110)) {
+
                 setEstadoPrioridadUnoDiastolicaAdulto(true)
             } else {
                 setEstadoPrioridadUnoDiastolicaAdulto(false)
@@ -293,7 +313,7 @@ export const TriajeDif = () => {
 
         const FrecuenciaRespiratoria = Number(InputtriajeFrecRespiratoria);
         if (!isNaN(FrecuenciaRespiratoria) && FrecuenciaRespiratoria != 0) {
-            if (edad >= 30 && (FrecuenciaRespiratoria < 10 || FrecuenciaRespiratoria > 35)) {
+            if (info?.triajeSolicita?.edad >= 30 && (FrecuenciaRespiratoria < 10 || FrecuenciaRespiratoria > 35)) {
                 setEstadoPrioridadUnoFRAdulto(true)
             } else {
                 setEstadoPrioridadUnoFRAdulto(false)
@@ -428,9 +448,8 @@ export const TriajeDif = () => {
 
     return (
         <>
-
-            <pre >
-                {JSON.stringify(editable, null, 2)}
+            <pre className="hidden">
+                {JSON.stringify(verdataJson, null, 2)}
             </pre>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="col-span-2">
@@ -442,14 +461,14 @@ export const TriajeDif = () => {
                             </form>
                         </div>
                         <div>
-                            <InputText label="Paciente : " readOnly={true} defaultValue={`${info?.triajeSolicita?.paterno || ''} ${info?.triajeSolicita?.materno || ''}  ${info?.triajeSolicita?.nombres || ''}`.trim()
+                            <InputText label="Paciente : " readOnly={true} defaultValue={`${info?.triajeSolicita?.paterno || ''} ${info?.triajeSolicita?.materno || ''}  ${info?.triajeSolicita?.nombres || ''}  ${info?.triajeSolicita?.edad ? `(${info.triajeSolicita.edad} años)` : ''}`.trim()
                             }></InputText>
                         </div>
                         <div>
-                            <InputText label="IAFA :" readOnly={true} defaultValue={info?.triajeSolicita?.iafa}></InputText>
+                            <InputText label="IAFA :" readOnly={true} defaultValue={`${info?.triajeSolicita?.iafa || ''}`}></InputText>
                         </div>
                         <div>
-                            <InputText label="Datos Informativos : " readOnly={true} defaultValue={`${info?.triajeSolicita?.servicio || ''}  ${info?.triajeSolicita?.fechaIngreso || ''}`}></InputText>
+                            <InputText label="Datos Informativos : " readOnly={true} defaultValue={`${info?.triajeSolicita?.servicio || ''} ${info?.triajeSolicita?.fechaIngreso || ''}  `.trim()}></InputText>
                         </div>
                     </div>
 
@@ -465,7 +484,7 @@ export const TriajeDif = () => {
                                     <h1 className='font-semibold text-slate-800'>Signos Vitales</h1>
                                 </div>
                                 <div className='grid grid-cols-1 md:grid-cols-2 gap-2 '>
-                                    <InputTextTriaje label="Temperatura" parametro={ParametroTemperatura} unidadMedida={"C°"} requerido={true} {...register('triajeTemperatura')} />
+                                    <InputTextTriaje label="Temperatura" readOnly={!editable} disabled={!editable} parametro={ParametroTemperatura} unidadMedida={"C°"} requerido={true} {...register('triajeTemperatura')} />
 
                                     <div className="flex items-center justify-center  ">
                                         <div className="flex flex-col">
@@ -488,8 +507,8 @@ export const TriajeDif = () => {
                                                     /
                                                 </div>
                                                 <input
-                                                readOnly={!editable}
-                                                disabled={!editable}
+                                                    readOnly={!editable}
+                                                    disabled={!editable}
                                                     type="text"
                                                     className="w-1/3 px-3 py-2 border border-gray-300 rounded-r-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                     placeholder="Diastolica"
@@ -504,10 +523,10 @@ export const TriajeDif = () => {
                                             </span>
                                         </div>
                                     </div>
-                                    <InputTextTriaje label="Saturación (SAT)" requerido={true} unidadMedida={"%"} {...register('triajeSaturacion')} />
-                                    <InputTextTriaje label="Frec. Cardiaca (FC)" requerido={true} unidadMedida={"x min"} parametro={ParametroFrecuenciaCardiaca} {...register('triajeFrecCardiaca')} />
-                                    <InputTextTriaje label="Frec. Respiratoria" requerido={true} unidadMedida={"x min"} parametro={ParametroFrecuenciaRespiratoria} {...register('triajeFrecRespiratoria')} />
-                                    <InputTextTriaje label="Pulso" requerido={true} unidadMedida='bpm' {...register('triajePulso')} parametro={ParametroPulso} />
+                                    <InputTextTriaje readOnly={!editable} disabled={!editable} label="Saturación (SAT)" requerido={true} unidadMedida={"%"} {...register('triajeSaturacion')} />
+                                    <InputTextTriaje readOnly={!editable} disabled={!editable} label="Frec. Cardiaca (FC)" requerido={true} unidadMedida={"x min"} parametro={ParametroFrecuenciaCardiaca} {...register('triajeFrecCardiaca')} />
+                                    <InputTextTriaje readOnly={!editable} disabled={!editable} label="Frec. Respiratoria" requerido={true} unidadMedida={"x min"} parametro={ParametroFrecuenciaRespiratoria} {...register('triajeFrecRespiratoria')} />
+                                    <InputTextTriaje readOnly={!editable} disabled={!editable} label="Pulso" requerido={true} unidadMedida='bpm' {...register('triajePulso')} parametro={ParametroPulso} />
                                 </div>
 
 
@@ -518,10 +537,10 @@ export const TriajeDif = () => {
                                     <h1 className='font-semibold text-slate-800'>Datos Antopometricos</h1>
                                 </div>
                                 <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
-                                    <InputTextTriaje label="Peso" requerido={false} unidadMedida={"Kg"} parametro={ParametroPeso}  {...register('triajePeso')} />
-                                    <InputTextTriaje label="Perimetro Abdominal" requerido={false} unidadMedida={"cm"}  {...register('triajePerimetro')} />
-                                    <InputTextTriaje label="Talla" requerido={false} parametro={ParametroTalla} unidadMedida={"cm"}  {...register('triajeTalla')} />
-                                    <InputTextTriaje label="Perimetro Cefalico" requerido={false} parametro={ParametroCefalico} unidadMedida={"cm"}  {...register('triajePerimCefalico')} />
+                                    <InputTextTriaje readOnly={!editable} disabled={!editable} label="Peso" requerido={false} unidadMedida={"Kg"} parametro={ParametroPeso}  {...register('triajePeso')} />
+                                    <InputTextTriaje readOnly={!editable} disabled={!editable} label="Perimetro Abdominal" requerido={false} unidadMedida={"cm"}  {...register('triajePerimetro')} />
+                                    <InputTextTriaje readOnly={!editable} disabled={!editable} label="Talla" requerido={false} parametro={ParametroTalla} unidadMedida={"cm"}  {...register('triajeTalla')} />
+                                    <InputTextTriaje readOnly={!editable} disabled={!editable} label="Perimetro Cefalico" requerido={false} parametro={ParametroCefalico} unidadMedida={"cm"}  {...register('triajePerimCefalico')} />
                                 </div>
                             </div>
 
@@ -534,21 +553,22 @@ export const TriajeDif = () => {
 
                                 <div className='col-span-1 md:col-span-2'>
                                     <div className="flex">
-                                        <input type="checkbox" {...register('EsGestante')} className="shrink-0 mt-0.5 border-gray-200 rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-800 dark:border-neutral-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800" id="hs-default-checkbox" />
+                                        <input type="checkbox" readOnly={!editable} disabled={!editable} {...register('EsGestante')} className="shrink-0 mt-0.5 border-gray-200 rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-800 dark:border-neutral-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800" id="hs-default-checkbox" />
                                         <label className="text-sm text-gray-500 ms-3 dark:text-neutral-400">Es Gestante</label>
                                     </div>
                                 </div>
                                 <InputWithHeader label="Altura Uterina" {...register('alturaUterina')} deshabilitado={estadoGestacionalCheck} />
                                 <InputWithHeader label="Frecuencia Cardiaca Fetal" {...register('frecCardiaca')} deshabilitado={estadoGestacionalCheck} />
                                 <InputWithHeader label="Edad Gestacional" {...register('edadGestacional')} deshabilitado={estadoGestacionalCheck} />
-                                <InputWithHeader label="Fecha de Parto" {...register('fechaParto')} deshabilitado={estadoGestacionalCheck} />
+
+                                <InputWithHeaderDate label="Fecha de Parto" {...register('fechaParto')} deshabilitado={estadoGestacionalCheck} />
                             </div>
 
                             <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
 
                                 <div className='col-span-1 md:col-span-2' style={{ marginBottom: '-12px' }}>
                                     <div className="flex">
-                                        <input type="checkbox" {...register('EsRecienNacido')} className="shrink-0 mt-0.5 border-gray-200 rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-800 dark:border-neutral-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800" id="hs-default-checkbox" />
+                                        <input type="checkbox" readOnly={!editable} disabled={!editable}  {...register('EsRecienNacido')} className="shrink-0 mt-0.5 border-gray-200 rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-800 dark:border-neutral-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800" id="hs-default-checkbox" />
                                         <label className="text-sm text-gray-500 ms-3 dark:text-neutral-400">Recien Nacido</label>
                                     </div>
                                 </div>
@@ -560,7 +580,7 @@ export const TriajeDif = () => {
 
 
                             <div className=' col-span-1 md:col-span-2  ' >
-                                <textarea {...register('observaciones')} className="py-3 px-4 block w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" rows={3} placeholder="Observaciones"></textarea>
+                                <textarea {...register('observaciones')} readOnly={!editable} disabled={!editable} className="py-3 px-4 block w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" rows={3} placeholder="Observaciones"></textarea>
                             </div>
 
                         </div>
@@ -572,7 +592,11 @@ export const TriajeDif = () => {
 
 
                         {info?.triajeSolicita?.exito === 1 && (
-                            <button type="submit" className="mt-4 px-4 py-2 bg-green-500 text-white rounded-r-md shadow hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            <button
+                                type="submit"
+                                disabled={ActivateButton}
+                                className="mt-4 px-4 py-2 bg-green-500 text-white rounded-r-md shadow hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-slate-300 disabled:cursor-not-allowed"
+                            >
                                 Guardar
                             </button>
                         )}

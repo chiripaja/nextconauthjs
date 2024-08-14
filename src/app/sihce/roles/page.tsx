@@ -49,7 +49,7 @@ export default function NamePage() {
         { id: 19, descripcion: "ImagTomografia" },
     ];
     return (
-        <div>
+        <div className="bg-white p-6 rounded shadow">
             <div className="grid grid-cols-2 gap-5">
                 <div>
                     <div className="bg-slate-200 rounded text-center font-bold">

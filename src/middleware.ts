@@ -10,8 +10,9 @@ const publicRoutes: string[] = [
 ]
 
 const roleRoutes: Record<string, string[]> = {
-  "/sihce/admision": ["webadmin","",""],
-  "/sihce/triaje": ["webadmin"],
+  "/sihce/inicio": ["webadmin","CE Triaje"],
+  "/sihce/admision": ["webadmin"],
+  "/sihce/triaje": ["webadmin","CE Triaje"],
   // Añade más rutas y roles según sea necesario
 };
 
@@ -19,6 +20,7 @@ export default auth((req: any) => {
     const { nextUrl } = req;
     const isLoggedIn = !!req.auth?.user;
     const userRoles: UserRole[] = req.auth?.user?.roles || [];
+
     // Verificar rutas públicas
     if (publicRoutes.includes(nextUrl.pathname)) {
       return NextResponse.next();
@@ -31,12 +33,13 @@ export default auth((req: any) => {
   
     // Verificar permisos basados en roles
     const requiredRoles = roleRoutes[nextUrl.pathname];
-
+  
     if (requiredRoles && !requiredRoles.some((role:any) => userRoles.some(userRole => userRole.nombre === role))) {
       // Redirigir a una página de acceso denegado o a la página de inicio
-      return NextResponse.redirect(new URL("/accessdenied", nextUrl));
+   
+      return NextResponse.redirect(new URL("/sihce/inicio", nextUrl));
     }
-  
+    
     return NextResponse.next();
   }); // El 'as any' es necesario debido a un problema de tipos con el middleware de Auth.js
   
