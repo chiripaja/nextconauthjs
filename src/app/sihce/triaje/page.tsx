@@ -1,7 +1,7 @@
 import { TriajeBusqueda } from "@/components/Triaje/TriajeBusqueda";
 import { TriajeDif } from '../../../components/TriajeDiferenciado/TriajeDif';
 
-export default function () {
+export default function triajepage() {
   return (
     <div className="flex-1 p-4">
  

@@ -42,7 +42,7 @@ export default {
       },
     }),
   ],
-  
+   secret: process.env.AUTH_SECRET,
   callbacks: {
     async jwt({ token, user }) {
       if (user) {  
@@ -65,5 +65,6 @@ export default {
   },
   pages: {
     signOut: '/login', 
+    signIn: '/login',
   },
 } satisfies NextAuthConfig

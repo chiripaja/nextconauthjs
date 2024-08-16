@@ -23,8 +23,8 @@ export const SelectTriaje = forwardRef<HTMLSelectElement, SelectTriajeProps>(
                     disabled={deshabilitado}
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${deshabilitado ? 'bg-gray-200' : ''}`}
                 >
-                        {opciones.map(opcion => (
-                            <option key={opcion.id} value={opcion.id}>
+                        {opciones.map(opcion => (                            
+                            <option key={opcion.id} value={opcion.id}   disabled={opcion.id === 2}>
                                 {opcion.descripcion}
                             </option>
                         ))}
@@ -33,3 +33,7 @@ export const SelectTriaje = forwardRef<HTMLSelectElement, SelectTriajeProps>(
             </>
         )
     })
+// Asignar un displayName al componente
+SelectTriaje.displayName = 'InputTextValue';
+
+export default SelectTriaje;

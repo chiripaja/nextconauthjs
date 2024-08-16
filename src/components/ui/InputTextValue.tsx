@@ -1,5 +1,6 @@
 import React, { forwardRef } from 'react';
-interface InputTextProps extends React.InputHTMLAttributes<HTMLInputElement>{
+
+interface InputTextProps extends React.InputHTMLAttributes<HTMLInputElement> {
     label: string;
     value?: string;
     defaultValue?: string;
@@ -7,7 +8,7 @@ interface InputTextProps extends React.InputHTMLAttributes<HTMLInputElement>{
 }
 
 export const InputTextValue = forwardRef<HTMLInputElement, InputTextProps>(
-  ({ label, value = "" , ...props }, ref) => {
+  ({ label, value = "", ...props }, ref) => {
     return (
       <div className="relative h-11 w-full min-w-[200px]">
         <input
@@ -24,3 +25,8 @@ export const InputTextValue = forwardRef<HTMLInputElement, InputTextProps>(
     );
   }
 );
+
+// Asignar un displayName al componente
+InputTextValue.displayName = 'InputTextValue';
+
+export default InputTextValue;

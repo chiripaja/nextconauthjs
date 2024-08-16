@@ -36,3 +36,7 @@ export const InputTextTwo = forwardRef<HTMLInputElement, InputTextProps>(
     </div>
   )
 })
+// Asignar un displayName al componente
+InputTextTwo.displayName = 'InputTextValue';
+
+export default InputTextTwo;

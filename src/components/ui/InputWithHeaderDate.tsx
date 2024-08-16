@@ -36,3 +36,7 @@ export const InputWithHeaderDate = forwardRef<HTMLInputElement, InputTextProps>(
       </>
     )
   })
+// Asignar un displayName al componente
+InputWithHeaderDate.displayName = 'InputTextValue';
+
+export default InputWithHeaderDate;

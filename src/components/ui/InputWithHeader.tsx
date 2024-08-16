@@ -38,3 +38,7 @@ export const InputWithHeader = forwardRef<HTMLInputElement, InputTextProps>(
       </>
     )
   })
+// Asignar un displayName al componente
+InputWithHeader.displayName = 'InputTextValue';
+
+export default InputWithHeader;

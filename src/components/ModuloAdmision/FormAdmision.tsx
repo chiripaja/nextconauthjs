@@ -4,6 +4,7 @@ import { FaPlus } from "react-icons/fa";
 import { SubmitHandler, useForm } from "react-hook-form";
 import axios from "axios";
 import Select from 'react-select';
+import Swal from "sweetalert2";
 
 type InputBusquedadDni = {
     dni: string
@@ -40,7 +41,9 @@ export const FormAdmision = (data: any) => {
     ];
     const opcionesFF = [
         { id: 1, descripcion: "SIS" },
-        { id: 2, descripcion: "particular" },
+        { id: 2, descripcion: "PARTICULAR" },
+        { id: 3, descripcion: "SALUDPOL" },
+        { id: 4, descripcion: "ESTRATEGIA" },
     ];
 
     const verdata = (data: any, index: any) => {
@@ -60,18 +63,30 @@ export const FormAdmision = (data: any) => {
     })
 
     const BuscadorDni: SubmitHandler<InputBusquedadDni> = async (formdata) => {
-        const { data } = await axios.get(`${process.env.apiurl}/Totem/SolicitaAdmitir?dni=${formdata.dni}&tipo=1`)
+        try {
+            const { data }:any = await axios.get(`${process.env.apiurl}/Totem/SolicitaAdmitir?dni=${formdata.dni}&tipo=1`)  
         setDatospx(data);
         console.log(data?.sisRpta?.exito)
-        if(data?.sisRpta?.exito){
+        if (data?.sisRpta?.exito) {
             console.log("si posee sis")
             setComboIafasDisable(false)
         }
-        else{
+        else {
             console.log("no posee sis")
             setComboIafasDisable(true)
         }
         console.log(data)
+        } catch (error) {
+            Swal.fire({
+                title: `<span>Atencion</span>`,
+                html: `<h5>DNI no encontrado.</h5>`,
+                timer: 5000, 
+                timerProgressBar: true,
+                icon: 'error',
+              });
+            
+        }
+        
     }
     const handleChange = (selectedOption: any) => {
         console.log('Selected:', selectedOption);
@@ -81,8 +96,8 @@ export const FormAdmision = (data: any) => {
         <>
             <div className="h-full bg-slate-400 md:bg-white p-3">
                 <pre>
-                    {JSON.stringify(datospx,null,2)}
-                    {JSON.stringify(datospx?.sisRpta?.exito,null,2)}
+                    {JSON.stringify(datospx, null, 2)}
+                    {JSON.stringify(datospx?.sisRpta?.exito, null, 2)}
                 </pre>
                 <div className="grid grid-cols-2 mt-3">
                     {
@@ -91,7 +106,7 @@ export const FormAdmision = (data: any) => {
                                 key={index}
                                 onClick={() => verdata(data, index)}
                                 className={`${activeIndex === index ? 'bg-teal-500' : 'bg-blue-500'
-                                    } shadow-md cursor-pointer transition duration-300 ease-in-out transform hover:scale-105 rounded-lg p-5 m-4 h-40 flex items-center justify-center`}
+                                    } shadow-md cursor-pointer transition duration-300 ease-in-out transform hover:scale-105 rounded-lg p-3 m-4 h-28 flex items-center justify-center`}
                             >    <div className="text-center" >
                                     <div className="mt-2 text-sm text-white">
                                         <p >{data.nombre_Servicios} ({data.cupos_Libres})</p>
@@ -106,7 +121,17 @@ export const FormAdmision = (data: any) => {
                 <form onSubmit={handleSubmit2(BuscadorDni)}>
 
                     <div className="grid grid-cols-3 gap-2">
-                        <SelectTriaje opciones={opcionesDNI} deshabilitado={false} />
+                    <select
+                    // Asigna el ref al selec
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 }`}
+                >
+                        {opcionesDNI.map(opcion => (                            
+                            <option key={opcion.id} value={opcion.id}   disabled={opcion.id === 2}>
+                                {opcion.descripcion}
+                            </option>
+                        ))}
+                    </select>
+                        
                         <input
                             type="number"
                             className=" px-3 py-2 border border-gray-300 rounded-r-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -184,29 +209,29 @@ export const FormAdmision = (data: any) => {
                 </div>
 
                 {datosConsultorio?.nombre_Medico && (
-    <div className="max-w-xs mt-3 mx-auto bg-white border border-dashed border-gray-300 p-4 rounded-lg shadow-md text-sm font-mono">
-        <div className="text-center mb-4">
-            <p className="font-bold">Ticket de Consulta</p>
-        </div>
-        <div className="mb-2">
-            <p className="font-semibold">Consultorio:</p>
-            <p>{datosConsultorio?.nombre_Servicios}</p>
-        </div>
-        <div className="mb-2">
-            <p className="font-semibold">Médico:</p>
-            <p>{datosConsultorio?.nombre_Medico}</p>
-        </div>
-        {datospx && (
-            <div className="mb-2">
-                <p className="font-semibold">Paciente:</p>
-                <p>{datospx?.paciente?.apenom}</p>
-            </div>
-        )}
-        <div className="text-center mt-4 border-t pt-2">
-            <p className="text-xs">Gracias por su visita</p>
-        </div>
-    </div>
-)}
+                    <div className="max-w-xs mt-3 mx-auto bg-white border border-dashed border-gray-300 p-4 rounded-lg shadow-md text-sm font-mono">
+                        <div className="text-center mb-4">
+                            <p className="font-bold">Ticket de Consulta</p>
+                        </div>
+                        <div className="mb-2">
+                            <p className="font-semibold">Consultorio:</p>
+                            <p>{datosConsultorio?.nombre_Servicios}</p>
+                        </div>
+                        <div className="mb-2">
+                            <p className="font-semibold">Médico:</p>
+                            <p>{datosConsultorio?.nombre_Medico}</p>
+                        </div>
+                        {datospx && (
+                            <div className="mb-2">
+                                <p className="font-semibold">Paciente:</p>
+                                <p>{datospx?.paciente?.apenom}</p>
+                            </div>
+                        )}
+                        <div className="text-center mt-4 border-t pt-2">
+                            <p className="text-xs">Gracias por su visita</p>
+                        </div>
+                    </div>
+                )}
             </div>
         </>
     )

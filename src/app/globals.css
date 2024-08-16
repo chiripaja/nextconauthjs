@@ -31,3 +31,6 @@ body {
     text-wrap: balance;
   }
 }
+.swal2-timer-progress-bar {
+  background-color: #ff6347 !important; /* Cambia #ff6347 por el color que desees */
+}
