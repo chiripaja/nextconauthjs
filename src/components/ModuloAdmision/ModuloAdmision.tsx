@@ -56,9 +56,13 @@ export const ModuloAdmision = () => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [daysToShow, setDaysToShow] = useState(15);
     const [TextoLoading, settextoLoading] = useState("----")
+    const [activeIndex, setActiveIndex] = useState<any>(null);
     const today = new Date();
 
     const ver = async (id: string, fecha: any) => {
+   
+        await setActiveIndex({id,fecha});
+     
         const especilidadDatos = citas.filter((item: Cita) =>
             item.idEspecialidad.toString() === id && item.fecha === fecha
         );
@@ -115,7 +119,7 @@ export const ModuloAdmision = () => {
 
     return (
         <div className="m-3 p-3 bg-white rounded">
-            <h1>{TextoLoading}</h1>
+           
             {isLoading ? (
                 <div className="flex justify-center items-center h-screen">
                     <div className="rounded-full h-20 w-20 bg-blue-600 animate-ping"></div>
@@ -164,10 +168,12 @@ export const ModuloAdmision = () => {
                                         <tr key={idEspecialidad} className="odd:bg-white even:bg-gray-100 dark:odd:bg-neutral-800 dark:even:bg-neutral-700 dark:hover:bg-neutral-700">
                                             <td>{citaEspecialidad ? citaEspecialidad.especialidad : 'No disponible'}</td>
                                             {fechas.slice(0, daysToShow).map((fecha) => (
-                                                <td key={fecha} className="p-1">
+                                                <td key={fecha} className= {` p-1 `}  >
                                                     {citasAgrupadas[parseInt(idEspecialidad)][fecha] ? (
                                                         citasAgrupadas[parseInt(idEspecialidad)][fecha].cuposLibres > 0 ? (
-                                                            <div onClick={() => ver(idEspecialidad, fecha)} className="cursor-pointer  text-center rounded bg-teal-500 hover:bg-teal-600 shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                                                            <div onClick={() => ver(idEspecialidad, fecha)}  className={`
+                                                            ${(activeIndex?.id === idEspecialidad && activeIndex?.fecha===fecha )? 'bg-yellow-400 font-bold' : ''} 
+                                                            cursor-pointer  text-center rounded bg-teal-500 hover:bg-yellow-200 shadow-md transition duration-300 ease-in-out transform hover:scale-105`}>
                                                                 [{citasAgrupadas[parseInt(idEspecialidad)][fecha].cuposLibres}]
                                                             </div>
                                                         ) : (
@@ -180,7 +186,9 @@ export const ModuloAdmision = () => {
 
                                                                 if (todayString === givenDateString) {
                                                                     return (
-                                                                        <div onClick={() => ver(idEspecialidad, fecha)} className="bg-orange-600 cursor-pointer rounded text-center hover:bg-orange-700 shadow-lg transition duration-300 ease-in-out transform hover:scale-105">
+                                                                        <div onClick={() => ver(idEspecialidad, fecha)} className={`
+                                                                        ${(activeIndex?.id === idEspecialidad && activeIndex?.fecha===fecha )? 'bg-yellow-400 font-bold' : ''} 
+                                                                        bg-orange-600 cursor-pointer rounded text-center hover:bg-yellow-200 shadow-lg transition duration-300 ease-in-out transform hover:scale-105`}>
                                                                             [0]
                                                                         </div>
                                                                     );

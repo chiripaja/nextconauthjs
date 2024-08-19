@@ -10,10 +10,9 @@ const publicRoutes: string[] = [
 ]
 
 const roleRoutes: Record<string, string[]> = {
-  "/sihce/inicio": ["webadmin","CE Triaje"],
-  "/sihce/admision": ["webadmin"],
-  "/sihce/triaje": ["webadmin","CE Triaje"],
-  // Añade más rutas y roles según sea necesario
+ // "/sihce/inicio": ["webadmin","CE Triaje"],
+  //"/sihce/admision": ["webadmin"],
+ // "/sihce/triaje": ["webadmin","CE Triaje"],
 };
 
 export default auth((req: any) => {

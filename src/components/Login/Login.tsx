@@ -24,11 +24,7 @@ export const Login = () => {
         hash.update(data.clave);
         const clave = hash.digest('hex');
         const usuario = data.usuario;
-        /*const dataveraxios = await axios.post(`${process.env.apiurl}/Usuario/VerificaAcceso`, {
-            usuario: usuario,
-            clave: clave
-        })
-        console.log(dataveraxios.data)*/
+        
         try {
             const response = await docredentials(usuario, clave)
             

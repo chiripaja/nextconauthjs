@@ -24,7 +24,7 @@ export const SelectTriaje = forwardRef<HTMLSelectElement, SelectTriajeProps>(
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${deshabilitado ? 'bg-gray-200' : ''}`}
                 >
                         {opciones.map(opcion => (                            
-                            <option key={opcion.id} value={opcion.id}   disabled={opcion.id === 2}>
+                            <option key={opcion.id} value={opcion.id}  >
                                 {opcion.descripcion}
                             </option>
                         ))}

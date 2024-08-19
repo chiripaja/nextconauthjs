@@ -1,3 +1,4 @@
+'use client'
 import { useEffect, useState } from "react";
 import { SelectTriaje } from "../ui/SelectTriaje";
 import { FaPlus } from "react-icons/fa";
@@ -11,10 +12,12 @@ type InputBusquedadDni = {
 }
 
 export const FormAdmision = (data: any) => {
-    const [datospx, setDatospx] = useState<any>()
+    const [datospx, setDatospx] = useState<any>();
     const [activeIndex, setActiveIndex] = useState(null);
-    const [datosConsultorio, setDatosConsultorio] = useState<any>()
-    const [comboIafasDisable, setComboIafasDisable] = useState(false)
+    const [datosConsultorio, setDatosConsultorio] = useState<any>();
+    const [comboIafasDisable, setComboIafasDisable] = useState(false);
+    const [iafas, setIafas] = useState<any>();
+    const [buttonLoading, setbuttonLoading] = useState(false)
     const establecimientoscombo = [
         { IdEstablecimiento: 1, Nombre: 'LABORATORIO CLINICO MUNICIPAL' },
         { IdEstablecimiento: 2, Nombre: 'DIRECCION DE SERVICIOS DE ATENCION MOVIL DE URGENCIAS Y EMERGENCIAS' },
@@ -26,6 +29,20 @@ export const FormAdmision = (data: any) => {
         value: est.IdEstablecimiento,
         label: est.Nombre,
     }));
+    useEffect(() => {
+        ObtenerIafas()
+    }, [])
+
+    const ObtenerIafas = async () => {
+        try {
+            const { data } = await axios.get(`${process.env.apiurl}/FuentesFinanciamiento`)
+            const iafas = data.filter((opc: any) => opc.idFuenteFinanciamiento !== 1)
+            setIafas(iafas);
+        } catch (error) {
+            console.log(error)
+        }
+
+    }
 
     useEffect(() => {
         setActiveIndex(null);
@@ -38,12 +55,6 @@ export const FormAdmision = (data: any) => {
     const opcionesDNI = [
         { id: 1, descripcion: "DNI" },
         { id: 2, descripcion: "C.E." },
-    ];
-    const opcionesFF = [
-        { id: 1, descripcion: "SIS" },
-        { id: 2, descripcion: "PARTICULAR" },
-        { id: 3, descripcion: "SALUDPOL" },
-        { id: 4, descripcion: "ESTRATEGIA" },
     ];
 
     const verdata = (data: any, index: any) => {
@@ -64,51 +75,57 @@ export const FormAdmision = (data: any) => {
 
     const BuscadorDni: SubmitHandler<InputBusquedadDni> = async (formdata) => {
         try {
-            const { data }:any = await axios.get(`${process.env.apiurl}/Totem/SolicitaAdmitir?dni=${formdata.dni}&tipo=1`)  
-        setDatospx(data);
-        console.log(data?.sisRpta?.exito)
-        if (data?.sisRpta?.exito) {
-            console.log("si posee sis")
-            setComboIafasDisable(false)
-        }
-        else {
-            console.log("no posee sis")
-            setComboIafasDisable(true)
-        }
-        console.log(data)
+            setbuttonLoading(true)
+            const { data }: any = await axios.get(`${process.env.apiurl}/Totem/SolicitaAdmitir?dni=${formdata.dni}&tipo=1`)
+            setDatospx(data);
+            if (data?.sisRpta?.exito) {
+                console.log("si posee sis")
+                setComboIafasDisable(false)
+            }
+            else {
+                console.log("no posee sis")
+                setComboIafasDisable(true)
+            }
+            setbuttonLoading(false)
         } catch (error) {
             Swal.fire({
                 title: `<span>Atencion</span>`,
                 html: `<h5>DNI no encontrado.</h5>`,
-                timer: 5000, 
+                timer: 5000,
                 timerProgressBar: true,
                 icon: 'error',
-              });
-            
+            });
         }
-        
     }
+
     const handleChange = (selectedOption: any) => {
         console.log('Selected:', selectedOption);
     };
+
     const { consultorio } = data;
+    if (data === null || data.consultorio === undefined) {
+        return (
+            <div className="bg-yellow-100 border border-yellow-300 text-yellow-700 px-4 py-3 rounded relative" role="alert">
+                <strong className="font-bold">Aviso:</strong>
+                <span className="block sm:inline"> Escoge alguna especialidad.</span>
+            </div>
+        );
+    }
+
     return (
         <>
             <div className="h-full bg-slate-400 md:bg-white p-3">
-                <pre>
-                    {JSON.stringify(datospx, null, 2)}
-                    {JSON.stringify(datospx?.sisRpta?.exito, null, 2)}
-                </pre>
+        
                 <div className="grid grid-cols-2 mt-3">
                     {
                         consultorio?.map((data: any, index: number) => (
                             <div
                                 key={index}
                                 onClick={() => verdata(data, index)}
-                                className={`${activeIndex === index ? 'bg-teal-500' : 'bg-blue-500'
-                                    } shadow-md cursor-pointer transition duration-300 ease-in-out transform hover:scale-105 rounded-lg p-3 m-4 h-28 flex items-center justify-center`}
+                                className={`${activeIndex === index ? 'bg-yellow-400 text-black font-bold' : 'bg-blue-500 text-white'} 
+                                shadow-md cursor-pointer transition duration-300 ease-in-out transform hover:scale-105 hover:bg-yellow-200 hover:text-black rounded-lg p-3 m-4 h-28 flex items-center justify-center`}
                             >    <div className="text-center" >
-                                    <div className="mt-2 text-sm text-white">
+                                    <div className="mt-2 text-sm ">
                                         <p >{data.nombre_Servicios} ({data.cupos_Libres})</p>
                                         <p >{data.nombre_Medico}</p>
                                     </div>
@@ -121,17 +138,17 @@ export const FormAdmision = (data: any) => {
                 <form onSubmit={handleSubmit2(BuscadorDni)}>
 
                     <div className="grid grid-cols-3 gap-2">
-                    <select
-                    // Asigna el ref al selec
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 }`}
-                >
-                        {opcionesDNI.map(opcion => (                            
-                            <option key={opcion.id} value={opcion.id}   disabled={opcion.id === 2}>
-                                {opcion.descripcion}
-                            </option>
-                        ))}
-                    </select>
-                        
+                        <select
+                            // Asigna el ref al selec
+                            className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 }`}
+                        >
+                            {opcionesDNI.map(opcion => (
+                                <option key={opcion.id} value={opcion.id} disabled={opcion.id === 2}>
+                                    {opcion.descripcion}
+                                </option>
+                            ))}
+                        </select>
+
                         <input
                             type="number"
                             className=" px-3 py-2 border border-gray-300 rounded-r-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -164,12 +181,19 @@ export const FormAdmision = (data: any) => {
     -moz-appearance: textfield;
   }
 `}</style>
+
+
                         <button
                             type="submit"
-                            className={` text-white py-2 px-4 rounded-r-md shadow focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 ${isValid2 ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-300 cursor-not-allowed'}`}
-                            disabled={!isValid2}
+                            className={` text-white py-2 px-4 rounded-r-md shadow focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 
+                                ${isValid2 ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-300 cursor-not-allowed'}
+                                ${buttonLoading ? 'bg-gray-300 cursor-not-allowed' : ''}
+                                `}
+                            disabled={!isValid2 || buttonLoading}
                         >
-                            Buscar
+                          
+                            {!buttonLoading ? 'Buscar' : 'Cargando...'}
+                            
                         </button>
                         {errors2.dni && (
                             <div className="text-red-500 text-sm mt-1 col-span-3 text-center">{errors2?.dni?.message}</div>
@@ -180,6 +204,7 @@ export const FormAdmision = (data: any) => {
 
                 <div className="grid grid-cols-1 gap-2 mt-3">
                     <Select
+                        inputId="select-establecimientos"
                         options={options}
                         onChange={handleChange}
                         placeholder="Seleccione un establecimiento"
@@ -187,8 +212,22 @@ export const FormAdmision = (data: any) => {
                     />
                 </div>
                 <div className="grid grid-cols-3 gap-2 mt-3">
-                    <label className="text-center">Financiamiento : </label>
-                    <SelectTriaje opciones={opcionesFF} deshabilitado={false} />
+                    <span className=''>
+                        Financiamiento :
+                    </span>
+                    <select
+                        className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                    >
+                        {iafas && iafas.length > 0 && iafas.map((opcion: any) => {
+
+                            return (
+                                <option key={opcion.idFuenteFinanciamiento} value={opcion.idFuenteFinanciamiento}>
+                                    {opcion.descripcion}
+                                </option>
+                            );
+                        })}
+                    </select>
+
                 </div>
 
                 <div className="grid grid-cols-3 gap-2 mt-3">
@@ -208,7 +247,7 @@ export const FormAdmision = (data: any) => {
                     </div>
                 </div>
 
-                {datosConsultorio?.nombre_Medico && (
+                {(datosConsultorio?.nombre_Medico || datospx?.paciente?.idPaciente) && (
                     <div className="max-w-xs mt-3 mx-auto bg-white border border-dashed border-gray-300 p-4 rounded-lg shadow-md text-sm font-mono">
                         <div className="text-center mb-4">
                             <p className="font-bold">Ticket de Consulta</p>
