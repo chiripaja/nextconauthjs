@@ -6,18 +6,30 @@ import { SubmitHandler, useForm } from "react-hook-form";
 import axios from "axios";
 import Select from 'react-select';
 import Swal from "sweetalert2";
+import { FormNuevoUsuario } from './FormNuevoUsuario';
+import { ModalGenerico } from "../ui/ModalGenerico";
 
 type InputBusquedadDni = {
     dni: string
 }
 
 export const FormAdmision = (data: any) => {
+  
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const [datospx, setDatospx] = useState<any>();
     const [activeIndex, setActiveIndex] = useState(null);
     const [datosConsultorio, setDatosConsultorio] = useState<any>();
     const [comboIafasDisable, setComboIafasDisable] = useState(false);
     const [iafas, setIafas] = useState<any>();
-    const [buttonLoading, setbuttonLoading] = useState(false)
+    const [buttonLoading, setbuttonLoading] = useState(false);
+    const [listadoProgramacion, setListadoProgramacion] = useState<any>()
+    const openModal = () => {
+        setIsModalOpen(true);
+    };
+
+    const closeModal = () => {
+        setIsModalOpen(false);
+    };
     const establecimientoscombo = [
         { IdEstablecimiento: 1, Nombre: 'LABORATORIO CLINICO MUNICIPAL' },
         { IdEstablecimiento: 2, Nombre: 'DIRECCION DE SERVICIOS DE ATENCION MOVIL DE URGENCIAS Y EMERGENCIAS' },
@@ -41,8 +53,9 @@ export const FormAdmision = (data: any) => {
         } catch (error) {
             console.log(error)
         }
-
     }
+
+    
 
     useEffect(() => {
         setActiveIndex(null);
@@ -57,9 +70,13 @@ export const FormAdmision = (data: any) => {
         { id: 2, descripcion: "C.E." },
     ];
 
-    const verdata = (data: any, index: any) => {
+    const verdata =async (data: any, index: any) => {
         setDatosConsultorio(data)
         setActiveIndex(index);
+       
+        const dataPromagracion=await axios.get(`${process.env.apiurl}/Citados/${data?.idProgramacion}`)
+        setListadoProgramacion(dataPromagracion?.data)
+       
     }
 
     const {
@@ -77,6 +94,7 @@ export const FormAdmision = (data: any) => {
         try {
             setbuttonLoading(true)
             const { data }: any = await axios.get(`${process.env.apiurl}/Totem/SolicitaAdmitir?dni=${formdata.dni}&tipo=1`)
+
             setDatospx(data);
             if (data?.sisRpta?.exito) {
                 console.log("si posee sis")
@@ -86,6 +104,10 @@ export const FormAdmision = (data: any) => {
                 console.log("no posee sis")
                 setComboIafasDisable(true)
             }
+
+            const establecimientosis = await axios.get(`${process.env.apiurl}/Totem/Establecimientos/${data?.sis?.eess.slice(-5)}`)
+            console.log(establecimientosis.data)
+
             setbuttonLoading(false)
         } catch (error) {
             Swal.fire({
@@ -105,7 +127,7 @@ export const FormAdmision = (data: any) => {
     const { consultorio } = data;
     if (data === null || data.consultorio === undefined) {
         return (
-            <div className="bg-yellow-100 border border-yellow-300 text-yellow-700 px-4 py-3 rounded relative" role="alert">
+            <div className="bg-yellow-100 m-5 border border-yellow-300 text-yellow-700 px-4 py-3 rounded relative" role="alert">
                 <strong className="font-bold">Aviso:</strong>
                 <span className="block sm:inline"> Escoge alguna especialidad.</span>
             </div>
@@ -114,20 +136,46 @@ export const FormAdmision = (data: any) => {
 
     return (
         <>
+
             <div className="h-full bg-slate-400 md:bg-white p-3">
-        
+                <div className="flex justify-center">
+
+                    <button
+                        className="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:bg-blue-700"
+                        onClick={openModal}
+                    >
+                        Nuevo Paciente
+                    </button>
+                    <ModalGenerico isOpen={isModalOpen} onClose={closeModal}>
+                        <h3 className="text-lg font-semibold text-gray-900">Modal Title</h3>
+                        <div className="mt-4 text-sm text-gray-600">
+                            <FormNuevoUsuario />
+                        </div>
+                        <div className="mt-6 flex justify-end">
+                            <button
+                                className="py-2 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-gray-200 text-gray-700 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                                onClick={closeModal}
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </ModalGenerico>
+                </div>
+
+
                 <div className="grid grid-cols-2 mt-3">
                     {
                         consultorio?.map((data: any, index: number) => (
                             <div
                                 key={index}
                                 onClick={() => verdata(data, index)}
-                                className={`${activeIndex === index ? 'bg-yellow-400 text-black font-bold' : 'bg-blue-500 text-white'} 
+                                className={`${activeIndex === index ? 'bg-yellow-400 text-black font-semibold' : 'bg-blue-500 text-white'} 
                                 shadow-md cursor-pointer transition duration-300 ease-in-out transform hover:scale-105 hover:bg-yellow-200 hover:text-black rounded-lg p-3 m-4 h-28 flex items-center justify-center`}
                             >    <div className="text-center" >
                                     <div className="mt-2 text-sm ">
-                                        <p >{data.nombre_Servicios} ({data.cupos_Libres})</p>
-                                        <p >{data.nombre_Medico}</p>
+                                        <p >{data.nombreServicio} ({data.cuposLibres})</p>
+                                        <p >{data.nombreMedico}</p>
+                                        <p >{data.horaInicio} - {data.horaFin} </p>
                                     </div>
                                 </div>
                             </div>
@@ -191,9 +239,9 @@ export const FormAdmision = (data: any) => {
                                 `}
                             disabled={!isValid2 || buttonLoading}
                         >
-                          
+
                             {!buttonLoading ? 'Buscar' : 'Cargando...'}
-                            
+
                         </button>
                         {errors2.dni && (
                             <div className="text-red-500 text-sm mt-1 col-span-3 text-center">{errors2?.dni?.message}</div>
@@ -271,6 +319,41 @@ export const FormAdmision = (data: any) => {
                         </div>
                     </div>
                 )}
+
+
+                <pre>
+                    {JSON.stringify(listadoProgramacion,null,2)}
+                </pre>
+                <div className="flex flex-col">
+                    <div className="-m-1.5 overflow-x-auto">
+                        <div className="p-1.5 min-w-full inline-block align-middle">
+                            <div className="overflow-hidden">
+                                <table className="min-w-full divide-y divide-gray-200 dark:divide-neutral-700">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col" className="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase dark:text-neutral-500">Nombres</th>
+                                            <th scope="col" className="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase dark:text-neutral-500">Cuenta</th>
+                                            <th scope="col" className="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase dark:text-neutral-500">Hora</th>
+                                            <th scope="col" className="px-6 py-3 text-end text-xs font-medium text-gray-500 uppercase dark:text-neutral-500">Accion</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-200 dark:divide-neutral-700">
+                              
+                                        <tr>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800 dark:text-neutral-200">John Brown</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-neutral-200">45</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-neutral-200">New York No. 1 Lake Park</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-end text-sm font-medium">
+                                                <button type="button" className="inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent text-blue-600 hover:text-blue-800 focus:outline-none focus:text-blue-800 disabled:opacity-50 disabled:pointer-events-none dark:text-blue-500 dark:hover:text-blue-400 dark:focus:text-blue-400">Delete</button>
+                                            </td>
+                                        </tr>                          
+                                      
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </>
     )

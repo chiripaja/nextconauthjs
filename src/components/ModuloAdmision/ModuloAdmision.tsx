@@ -7,9 +7,9 @@ import { FormAdmision } from './FormAdmision';
 interface Cita {
     idEspecialidad: number;
     fecha: string;
-    cupos_Libres: string;
+    cuposLibres: string;
     total_Citas: string;
-    especialidad: string;
+    nombreEspecialidad: string;
 }
 
 interface AgrupadoCitas {
@@ -25,7 +25,7 @@ const agruparYCuposLibres = (citas: Cita[]): AgrupadoCitas => {
     if (!Array.isArray(citas)) return {};
 
     const agrupado = citas.reduce((acc: AgrupadoCitas, cita: Cita) => {
-        const { idEspecialidad, fecha, cupos_Libres, total_Citas } = cita;
+        const { idEspecialidad, fecha, cuposLibres, total_Citas } = cita;
 
         if (!acc[idEspecialidad]) {
             acc[idEspecialidad] = {};
@@ -36,7 +36,7 @@ const agruparYCuposLibres = (citas: Cita[]): AgrupadoCitas => {
         }
 
         acc[idEspecialidad][fecha].totalCitas += parseInt(total_Citas, 10);
-        acc[idEspecialidad][fecha].cuposLibres += parseInt(cupos_Libres, 10);
+        acc[idEspecialidad][fecha].cuposLibres += parseInt(cuposLibres, 10);
 
         return acc;
     }, {});
@@ -74,6 +74,7 @@ export const ModuloAdmision = () => {
         setIsLoading(true);
         try {
             const response = await axios.get(`${process.env.apiurl}/Admision/CuposLibres`);
+            console.log(response)
             const data = response.data;
             setCitas(data);
         } catch (error) {
@@ -89,7 +90,7 @@ export const ModuloAdmision = () => {
         try {
             const response = await axios.get(`${process.env.apiurl}/Admision/CuposLibres`);
             const data = response.data;
-
+           
             setCitas(data);
         } catch (error) {
             console.error('Error fetching products:', error);
@@ -125,7 +126,9 @@ export const ModuloAdmision = () => {
                     <div className="rounded-full h-20 w-20 bg-blue-600 animate-ping"></div>
                 </div>
             ) : (
+                
                 <div className="grid grid-cols-12 gap-4">
+                   
                     <div className="col-span-12">
                         <div className="grid grid-cols-2 gap-8">
                             <button
@@ -166,7 +169,7 @@ export const ModuloAdmision = () => {
 
                                     return (
                                         <tr key={idEspecialidad} className="odd:bg-white even:bg-gray-100 dark:odd:bg-neutral-800 dark:even:bg-neutral-700 dark:hover:bg-neutral-700">
-                                            <td>{citaEspecialidad ? citaEspecialidad.especialidad : 'No disponible'}</td>
+                                            <td>{citaEspecialidad ? citaEspecialidad.nombreEspecialidad : 'No disponible'}</td>
                                             {fechas.slice(0, daysToShow).map((fecha) => (
                                                 <td key={fecha} className= {` p-1 `}  >
                                                     {citasAgrupadas[parseInt(idEspecialidad)][fecha] ? (
