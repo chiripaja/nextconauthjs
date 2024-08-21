@@ -57,6 +57,8 @@ export const ModuloAdmision = () => {
     const [daysToShow, setDaysToShow] = useState(15);
     const [TextoLoading, settextoLoading] = useState("----")
     const [activeIndex, setActiveIndex] = useState<any>(null);
+    const [establecimientosLista, setEstablecimientosLista] = useState<any>()
+    const [ffFinanciamiento, setffFinanciamiento] = useState<any>()
     const today = new Date();
 
     const ver = async (id: string, fecha: any) => {
@@ -73,8 +75,7 @@ export const ModuloAdmision = () => {
     const fetchProducts = async () => {
         setIsLoading(true);
         try {
-            const response = await axios.get(`${process.env.apiurl}/Admision/CuposLibres`);
-            console.log(response)
+            const response = await axios.get(`${process.env.apiurl}/Admision/CuposLibres`);           
             const data = response.data;
             setCitas(data);
         } catch (error) {
@@ -101,9 +102,19 @@ export const ModuloAdmision = () => {
 
     useEffect(() => {
         fetchProducts();
+        obtenerEstablecimientos();
+        obtenerff();
     }, []);
 
+    const obtenerEstablecimientos=async()=>{
+        const {data}=await axios.get(`${process.env.apiurl}/EstablecimientosTodo`);
+        setEstablecimientosLista(data);
+    }
 
+    const obtenerff=async()=>{
+        const {data}=await axios.get(`${process.env.apiurl}/FuentesFinanciamiento`);
+        setffFinanciamiento(data);
+    }
 
     useEffect(() => {
         /* fetchProductsActualizacionPosterior();
@@ -220,7 +231,7 @@ export const ModuloAdmision = () => {
                         </table>
                     </div>
                     <div className="col-span-12 md:col-span-4 border rounded">
-                        <FormAdmision consultorio={consultorio} />
+                        <FormAdmision consultorio={consultorio} establecimientos={establecimientosLista} ffFinanciamiento={ffFinanciamiento}/>
                     </div>
                 </div>
 
