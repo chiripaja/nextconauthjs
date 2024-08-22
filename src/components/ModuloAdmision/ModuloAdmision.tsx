@@ -130,110 +130,114 @@ export const ModuloAdmision = () => {
     const fechas = generarFechas(citas);
 
     return (
-        <div className="m-3 p-3 bg-white rounded">
+        <div className="m-3 p-3 bg-white rounded print:m-0 print:p-0 print:bg-transparent print:rounded-none">
            
             {isLoading ? (
                 <div className="flex justify-center items-center h-screen">
                     <div className="rounded-full h-20 w-20 bg-blue-600 animate-ping"></div>
                 </div>
             ) : (
-                
-                <div className="grid grid-cols-12 gap-4">
+                <>
+                 <div className="grid grid-cols-12 gap-4 ">
                    
-                    <div className="col-span-12">
-                        <div className="grid grid-cols-2 gap-8">
-                            <button
-                                type="button"
-                                className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-105"
-                                onClick={() => setDaysToShow(Math.ceil(fechas.length / 2))} // Mostrar 50% (15 días)
-                            >
-                                Mostrar Citas Proximas
-                            </button>
-                            <button
-                                type="button"
-                                className="bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-105"
-                                onClick={() => setDaysToShow(fechas.length)} // Mostrar 100% (30 días)
-                            >
-                                Mostrar Total Citas
-                            </button>
-                        </div>
-                    </div>
-                    <div className="col-span-12 md:col-span-8">
-                        <table className="min-w-full divide-y divide-gray-200 dark:divide-neutral-700 ">
-                            <thead>
-                                <tr>
-                                    <th>Especialidad</th>
-                                    {fechas.slice(0, daysToShow).map((fecha) => {
-                                        const partes = fecha.split("-");
-                                        const mesDia = `${partes[1]}-${partes[2]}`;
-                                        return (
-                                            <th key={fecha}>{mesDia}</th>
-                                        );
-                                    })}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {Object.keys(citasAgrupadas).map((idEspecialidad) => {
-                                    const citaEspecialidad = citas.find(
-                                        (cita) => cita.idEspecialidad === parseInt(idEspecialidad)
-                                    );
+                   <div className="col-span-12 print:hidden">
+                       <div className="grid grid-cols-2 gap-8">
+                           <button
+                               type="button"
+                               className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-105"
+                               onClick={() => setDaysToShow(Math.ceil(fechas.length / 2))} // Mostrar 50% (15 días)
+                           >
+                               Mostrar Citas Proximas
+                           </button>
+                           <button
+                               type="button"
+                               className="bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-105"
+                               onClick={() => setDaysToShow(fechas.length)} // Mostrar 100% (30 días)
+                           >
+                               Mostrar Total Citas
+                           </button>
+                       </div>
+                   </div>
+                   <div className="col-span-12 md:col-span-8 print:hidden">
+                       <table className="min-w-full divide-y divide-gray-200 dark:divide-neutral-700 ">
+                           <thead>
+                               <tr>
+                                   <th>Especialidad</th>
+                                   {fechas.slice(0, daysToShow).map((fecha) => {
+                                       const partes = fecha.split("-");
+                                       const mesDia = `${partes[1]}-${partes[2]}`;
+                                       return (
+                                           <th key={fecha}>{mesDia}</th>
+                                       );
+                                   })}
+                               </tr>
+                           </thead>
+                           <tbody>
+                               {Object.keys(citasAgrupadas).map((idEspecialidad) => {
+                                   const citaEspecialidad = citas.find(
+                                       (cita) => cita.idEspecialidad === parseInt(idEspecialidad)
+                                   );
 
-                                    return (
-                                        <tr key={idEspecialidad} className="odd:bg-white even:bg-gray-100 dark:odd:bg-neutral-800 dark:even:bg-neutral-700 dark:hover:bg-neutral-700">
-                                            <td>{citaEspecialidad ? citaEspecialidad.nombreEspecialidad : 'No disponible'}</td>
-                                            {fechas.slice(0, daysToShow).map((fecha) => (
-                                                <td key={fecha} className= {` p-1 `}  >
-                                                    {citasAgrupadas[parseInt(idEspecialidad)][fecha] ? (
-                                                        citasAgrupadas[parseInt(idEspecialidad)][fecha].cuposLibres > 0 ? (
-                                                            <div onClick={() => ver(idEspecialidad, fecha)}  className={`
-                                                            ${(activeIndex?.id === idEspecialidad && activeIndex?.fecha===fecha )? 'bg-yellow-400 font-bold' : ''} 
-                                                            cursor-pointer  text-center rounded bg-teal-500 hover:bg-yellow-200 shadow-md transition duration-300 ease-in-out transform hover:scale-105`}>
-                                                                [{citasAgrupadas[parseInt(idEspecialidad)][fecha].cuposLibres}]
-                                                            </div>
-                                                        ) : (
-                                                            (() => {
-                                                                const givenDate = new Date(fecha);
-                                                                const today = new Date();
+                                   return (
+                                       <tr key={idEspecialidad} className="odd:bg-white even:bg-gray-100 dark:odd:bg-neutral-800 dark:even:bg-neutral-700 dark:hover:bg-neutral-700">
+                                           <td>{citaEspecialidad ? citaEspecialidad.nombreEspecialidad : 'No disponible'}</td>
+                                           {fechas.slice(0, daysToShow).map((fecha) => (
+                                               <td key={fecha} className= {` p-1 `}  >
+                                                   {citasAgrupadas[parseInt(idEspecialidad)][fecha] ? (
+                                                       citasAgrupadas[parseInt(idEspecialidad)][fecha].cuposLibres > 0 ? (
+                                                           <div onClick={() => ver(idEspecialidad, fecha)}  className={`
+                                                           ${(activeIndex?.id === idEspecialidad && activeIndex?.fecha===fecha )? 'bg-yellow-400 font-bold' : ''} 
+                                                           cursor-pointer  text-center rounded bg-teal-500 hover:bg-yellow-200 shadow-md transition duration-300 ease-in-out transform hover:scale-105`}>
+                                                               [{citasAgrupadas[parseInt(idEspecialidad)][fecha].cuposLibres}]
+                                                           </div>
+                                                       ) : (
+                                                           (() => {
+                                                               const givenDate = new Date(fecha);
+                                                               const today = new Date();
 
-                                                                const todayString = today.toISOString().split('T')[0];
-                                                                const givenDateString = givenDate.toISOString().split('T')[0];
+                                                               const todayString = today.toISOString().split('T')[0];
+                                                               const givenDateString = givenDate.toISOString().split('T')[0];
 
-                                                                if (todayString === givenDateString) {
-                                                                    return (
-                                                                        <div onClick={() => ver(idEspecialidad, fecha)} className={`
-                                                                        ${(activeIndex?.id === idEspecialidad && activeIndex?.fecha===fecha )? 'bg-yellow-400 font-bold' : ''} 
-                                                                        bg-orange-600 cursor-pointer rounded text-center hover:bg-yellow-200 shadow-lg transition duration-300 ease-in-out transform hover:scale-105`}>
-                                                                            [0]
-                                                                        </div>
-                                                                    );
-                                                                } else {
-                                                                    return (
-                                                                        <div className="bg-gray-300 rounded">
-                                                                            <button onClick={() => ver(idEspecialidad, fecha)}></button>
-                                                                        </div>
-                                                                    ); // No mostrar nada si las fechas no coinciden
-                                                                }
-                                                            })()
-                                                        )
-                                                    ) : (
-                                                        <div className="bg-gray-300 rounded">
-                                                            <button onClick={() => ver(idEspecialidad, fecha)}></button>
-                                                        </div>
-                                                    )}
-                                                </td>
-                                            ))}
-                                        </tr>
+                                                               if (todayString === givenDateString) {
+                                                                   return (
+                                                                       <div onClick={() => ver(idEspecialidad, fecha)} className={`
+                                                                       ${(activeIndex?.id === idEspecialidad && activeIndex?.fecha===fecha )? 'bg-yellow-400 font-bold' : ''} 
+                                                                       bg-orange-600 cursor-pointer rounded text-center hover:bg-yellow-200 shadow-lg transition duration-300 ease-in-out transform hover:scale-105`}>
+                                                                           [0]
+                                                                       </div>
+                                                                   );
+                                                               } else {
+                                                                   return (
+                                                                       <div className="bg-gray-300 rounded">
+                                                                           <button onClick={() => ver(idEspecialidad, fecha)}></button>
+                                                                       </div>
+                                                                   ); // No mostrar nada si las fechas no coinciden
+                                                               }
+                                                           })()
+                                                       )
+                                                   ) : (
+                                                       <div className="bg-gray-300 rounded">
+                                                           <button onClick={() => ver(idEspecialidad, fecha)}></button>
+                                                       </div>
+                                                   )}
+                                               </td>
+                                           ))}
+                                       </tr>
 
 
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                    <div className="col-span-12 md:col-span-4 border rounded">
-                        <FormAdmision consultorio={consultorio} establecimientos={establecimientosLista} ffFinanciamiento={ffFinanciamiento}/>
-                    </div>
-                </div>
+                                   );
+                               })}
+                           </tbody>
+                       </table>
+                   </div>
+                   <div className="col-span-12 md:col-span-4 border rounded print:col-span-12 print:md:col-span-12 print:border-none print:rounded-none">
+                       <FormAdmision consultorio={consultorio} establecimientos={establecimientosLista} ffFinanciamiento={ffFinanciamiento}/>
+                   </div>
+               </div>
+         
+                
+                </>
+               
 
             )}
         </div>

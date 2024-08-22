@@ -10,6 +10,7 @@ import { FormNuevoUsuario } from './FormNuevoUsuario';
 import { ModalGenerico } from "../ui/ModalGenerico";
 import { FiPrinter } from "react-icons/fi";
 import { AiOutlineLoading } from "react-icons/ai";
+import { TicketImpresion } from "./TicketImpresion";
 
 type InputBusquedadDni = {
     dni: string
@@ -63,6 +64,7 @@ const fetchOptionsByCodigo = async (codigo: string): Promise<Establecimiento[]> 
 };
 
 export const FormAdmision = (data: any) => {
+    const [nearest, setNearest] = useState<any>(null);
     const [optionsCombo, setOptionsCombo] = useState<any[]>([]);
     const [inputValue, setInputValue] = useState<string>('');
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -76,6 +78,7 @@ export const FormAdmision = (data: any) => {
     const [listadoProgramacion, setListadoProgramacion] = useState<any[]>([])
     const [cargandoLista, setCargandoLista] = useState(false)
     const [isLoadingAdmisionar, setIsLoadingAdmisionar] = useState(false);
+    const [shouldPrint, setShouldPrint] = useState(false);
 
     const loadOptions = useCallback(async (inputValue: string) => {
         setIsLoading(true);
@@ -114,18 +117,18 @@ export const FormAdmision = (data: any) => {
         reset: reset2,
         formState: { errors: errors2, isValid: isValid2 },
     } = useForm<InputBusquedadDni>({
-        mode: 'onChange', 
+        mode: 'onChange',
     })
 
     const { control, register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<formAdmision>();
-   
-   
+
+
     const BuscadorDni: SubmitHandler<InputBusquedadDni> = async (formdata) => {
         try {
-            setValue('idIafa',0)
-            setValue('referenciaNumero',"")
-            setValue('referenciaCodigo',"")
-       
+            setValue('idIafa', 0)
+            setValue('referenciaNumero', "")
+            setValue('referenciaCodigo', "")
+
             setbuttonLoading(true)
             const { data }: any = await axios.get(`${process.env.apiurl}/Totem/SolicitaAdmitir?dni=${formdata.dni}&tipo=1`)
             console.log(data?.sisRpta?.exito)
@@ -149,18 +152,18 @@ export const FormAdmision = (data: any) => {
     const AutoseleccionEstablecimiento = async (codigo: string) => {
         setIsLoading(true);
         const fetchedOptions = await fetchOptionsByCodigo(codigo);
-        setOptionsCombo(fetchedOptions);   
+        setOptionsCombo(fetchedOptions);
         setIsLoading(false);
     }
 
 
-   
+
 
 
     const AdmisionarPx: SubmitHandler<formAdmision> = async (formData: any) => {
 
         setIsLoadingAdmisionar(true)
-      
+
         if (formData.idIafa === 3) {
             if (!formData?.idPaciente) {
                 showAlert("Atencion", "Seleccionar paciente.")
@@ -175,21 +178,21 @@ export const FormAdmision = (data: any) => {
                     idIafa: parseInt(formData?.idIafa, 10),
                     referenciaCodigo: formData?.referenciaCodigo?.value
                 };
-                  try {
-                      const data = await axios.post(`${process.env.apiurl}/AdmisionGuardar`, convertedData);
-                  
-                      if(data?.data?.exito==='1'){
+                try {
+                    const data = await axios.post(`${process.env.apiurl}/AdmisionGuardar`, convertedData);
+
+                    if (data?.data?.exito === '1') {
                         showAlert("Atencion", data?.data?.mensaje)
-                      }
-                      else{
+                    }
+                    else {
                         showAlert("Atencion", data?.data?.mensaje)
-                      } 
-                      
-                  } catch (error) {
-                      console.log(error)
-                  } finally{
+                    }
+
+                } catch (error) {
+                    console.log(error)
+                } finally {
                     setIsLoadingAdmisionar(false);
-                  }
+                }
             }
         } else {
             if (!formData?.idPaciente) {
@@ -200,19 +203,19 @@ export const FormAdmision = (data: any) => {
                 showAlert("Atencion", "Seleccionar consultorio.")
                 setIsLoadingAdmisionar(false);
             } else {
-                  try {
-                      const data = await axios.post(`${process.env.apiurl}/AdmisionGuardar`, formData);
-                      if(data?.data?.exito==='1'){
+                try {
+                    const data = await axios.post(`${process.env.apiurl}/AdmisionGuardar`, formData);
+                    if (data?.data?.exito === '1') {
                         showAlert("Atencion", data?.data?.mensaje)
-                      }
-                      else{
+                    }
+                    else {
                         showAlert("Atencion", data?.data?.mensaje)
-                      } 
-                  } catch (error) {
-                      console.log(error)
-                  } finally{
+                    }
+                } catch (error) {
+                    console.log(error)
+                } finally {
                     setIsLoadingAdmisionar(false);
-                  }
+                }
             }
 
         }
@@ -248,7 +251,7 @@ export const FormAdmision = (data: any) => {
         }
     }, [datospx, setValue]);
 
-  
+
 
     useEffect(() => {
         if (datosConsultorio?.idProgramacion) {
@@ -267,11 +270,23 @@ export const FormAdmision = (data: any) => {
         if (idIafa) {
             console.log("entro aca")
             // Puedes hacer una solicitud, actualizar el estado, etc.
-             setValue('referenciaCodigo', '');
-             setValue('referenciaNumero', '');
+            setValue('referenciaCodigo', '');
+            setValue('referenciaNumero', '');
         }
     }, [idIafa]);
 
+
+    const impresionTicket=async(numcuenta:any)=>{
+        const {data}=await axios.get(`${process.env.apiurl}/TicketAdmision/${numcuenta}`)
+        await setNearest(data)
+        setShouldPrint(true);
+    }
+    useEffect(() => {
+        if (shouldPrint && nearest) {
+            print(); // Imprime solo cuando shouldPrint es true y nearest tiene datos
+            setShouldPrint(false); // Resetea el estado para evitar impresiones accidentales
+        }
+    }, [nearest, shouldPrint]);
 
     if (data === null || data.consultorio === undefined) {
         return (
@@ -283,11 +298,11 @@ export const FormAdmision = (data: any) => {
     }
 
 
-      
+
     return (
         <>
 
-            <div className="h-full bg-slate-400 md:bg-white p-3">
+            <div className="h-full bg-slate-400 md:bg-white p-3 print:hidden">
                 <div className="flex justify-center">
 
                     <button
@@ -429,41 +444,41 @@ export const FormAdmision = (data: any) => {
                     </div>
 
                     {idIafaValue == 3 && (
-<div>
-                    <div className="grid grid-cols-1 gap-2 mt-3">
-                        <Controller
-                            name="referenciaCodigo" // Nombre del campo en el formulario
-                            control={control}
-                            defaultValue="" // Valor predeterminado
-                            render={({ field }) => (
-                                <Select
-                                    inputId="select-establecimientos"
-                                    options={optionsCombo}
-                                    placeholder={isLoading ? 'Cargando...' : 'Seleccione un establecimiento'}
-                                    isSearchable={true}
-                                    isLoading={isLoading}
-                                    {...field}
-                                    onInputChange={setInputValue}
-                                    required={true}
+                        <div>
+                            <div className="grid grid-cols-1 gap-2 mt-3">
+                                <Controller
+                                    name="referenciaCodigo" // Nombre del campo en el formulario
+                                    control={control}
+                                    defaultValue="" // Valor predeterminado
+                                    render={({ field }) => (
+                                        <Select
+                                            inputId="select-establecimientos"
+                                            options={optionsCombo}
+                                            placeholder={isLoading ? 'Cargando...' : 'Seleccione un establecimiento'}
+                                            isSearchable={true}
+                                            isLoading={isLoading}
+                                            {...field}
+                                            onInputChange={setInputValue}
+                                            required={true}
+                                        />
+                                    )}
                                 />
-                            )}
-                        />
-                    </div>
-                  
-                        <div className="grid grid-cols-2 gap-2 mt-3">
-                            <label className="text-center">Nro de Referencia : </label>
-                            <input
-                                type="text"
-                                className={`px-3 py-2 border rounded-r-md focus:outline-none focus:ring-2 
-${errors.referenciaNumero ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`}
-                                placeholder=""
-                                {...register('referenciaNumero', { required: 'Este campo es obligatorio' })}
-                            />
-                            <div className="text-red-500 col-span-3 text-center">
-                                {errors.referenciaNumero && <span>{errors.referenciaNumero.message}</span>}
                             </div>
 
-                        </div>
+                            <div className="grid grid-cols-2 gap-2 mt-3">
+                                <label className="text-center">Nro de Referencia : </label>
+                                <input
+                                    type="text"
+                                    className={`px-3 py-2 border rounded-r-md focus:outline-none focus:ring-2 
+${errors.referenciaNumero ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`}
+                                    placeholder=""
+                                    {...register('referenciaNumero', { required: 'Este campo es obligatorio' })}
+                                />
+                                <div className="text-red-500 col-span-3 text-center">
+                                    {errors.referenciaNumero && <span>{errors.referenciaNumero.message}</span>}
+                                </div>
+
+                            </div>
                         </div>
                     )}
 
@@ -472,16 +487,16 @@ ${errors.referenciaNumero ? 'border-red-500 focus:ring-red-500' : 'border-gray-3
 
 
                     <div className="flex justify-center mt-4">
-                    <button
-                type="submit"
-                className={`flex justify-center items-center ${isLoadingAdmisionar ? 'bg-gray-400 cursor-not-allowed' : 'bg-amber-500 hover:bg-amber-600'} text-white rounded shadow focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 w-1/2 h-12`}
-                disabled={isLoadingAdmisionar}
-            >
-        
-                {isLoadingAdmisionar ? <AiOutlineLoading className="animate-spin" /> : <FaPlus />} &nbsp;
-                {isLoadingAdmisionar ? 'Cargando...' : 'Admisionar'}
-             
-            </button>
+                        <button
+                            type="submit"
+                            className={`flex justify-center items-center ${isLoadingAdmisionar ? 'bg-gray-400 cursor-not-allowed' : 'bg-amber-500 hover:bg-amber-600'} text-white rounded shadow focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 w-1/2 h-12`}
+                            disabled={isLoadingAdmisionar}
+                        >
+
+                            {isLoadingAdmisionar ? <AiOutlineLoading className="animate-spin" /> : <FaPlus />} &nbsp;
+                            {isLoadingAdmisionar ? 'Cargando...' : 'Admisionar'}
+
+                        </button>
                     </div>
                 </form>
                 {(datosConsultorio?.nombre_Medico || datospx?.paciente?.idPaciente) && (
@@ -555,7 +570,7 @@ ${errors.referenciaNumero ? 'border-red-500 focus:ring-red-500' : 'border-gray-3
                                                             <td className="px-6 py-4 whitespace-nowrap text-end text-sm font-medium">
 
 
-                                                                <button type="button" className="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none">
+                                                                <button type="button" onClick={()=>impresionTicket(datalista?.idCuentaAtencion)} className="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none">
                                                                     <FiPrinter />
                                                                     Imprimir
                                                                 </button>
@@ -574,6 +589,11 @@ ${errors.referenciaNumero ? 'border-red-500 focus:ring-red-500' : 'border-gray-3
                 </div>
 
             </div>
+
+            {nearest && (
+                <TicketImpresion Datos={nearest} />
+            )}
+
         </>
     )
 }

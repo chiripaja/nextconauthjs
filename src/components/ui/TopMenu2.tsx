@@ -26,7 +26,7 @@ export const TopMenu2 = async () => {
   const webadmin = session?.user?.roles?.some(role => role.idRol === 1165);
   const cetriaje = session?.user?.roles?.some(role => role.idRol === 101);
   return (
-    <header className="flex flex-wrap sm:justify-start sm:flex-nowrap w-full bg-blue-600 text-sm py-3">
+    <header className="flex flex-wrap sm:justify-start sm:flex-nowrap w-full bg-blue-600 text-sm py-3 print:hidden">
       <nav className="max-w-[85rem] w-full mx-auto px-4 sm:flex sm:items-center sm:justify-between">
         <div className="flex  justify-between">
 
