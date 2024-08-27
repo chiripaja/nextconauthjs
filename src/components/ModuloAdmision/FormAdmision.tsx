@@ -14,6 +14,7 @@ import { TicketImpresion } from "./TicketImpresion";
 import { useSession } from "next-auth/react";
 
 import { RiDeleteBin6Line, RiH1 } from "react-icons/ri";
+import { json } from "stream/consumers";
 
 
 
@@ -26,7 +27,7 @@ type InputBusquedadDni = {
 type formAdmision = {
     idPaciente: number,
     idProgramacion: number,
-    idIafa: number,
+    idIafa: any,
     referenciaCodigo: any,
     referenciaNumero: string,
     esAdicional: number,
@@ -72,9 +73,7 @@ const fetchOptions = async (establecimiento: string): Promise<Establecimiento[]>
 
 const fetchOptionsByCodigo = async (codigo: string): Promise<Establecimiento[]> => {
     try {
-        const response = await axios.get(`${process.env.apiurl}/Totem/Establecimientos/${codigo}`);
-        console.log("**************************************")
-        console.log(response)
+        const response = await axios.get(`${process.env.apiurl}/Totem/Establecimientos/${codigo}`);    
         return response.data.map((est: any) => ({
             value: est.codigo,
             label: est.nombre
@@ -105,7 +104,6 @@ export const FormAdmision = (data: any) => {
     const [cargandoLista, setCargandoLista] = useState(false)
     const [isLoadingAdmisionar, setIsLoadingAdmisionar] = useState(false);
     const [shouldPrint, setShouldPrint] = useState(false);
-    const [selectedValue, setSelectedValue] = useState<string>('');
 
     const loadOptions = useCallback(async (inputValue: string) => {
         setIsLoading(true);
@@ -159,12 +157,28 @@ export const FormAdmision = (data: any) => {
 
     const BuscadorDni: SubmitHandler<InputBusquedadDni> = async (formdata) => {
         try {
-            setValue('idIafa', 0)
+            console.log(formdata)
+            setDatospx(null)
+            setValue('idIafa', "")
             setValue('referenciaNumero', "")
             setValue('referenciaCodigo', "")
             setbuttonLoading(true)
             const { data }: any = await axios.get(`${process.env.apiurl}/Totem/SolicitaAdmitir?dni=${formdata?.dni}&tipo=${formdata?.tipodocumento}`)
-            setDatospx(data);
+         
+            if(data?.paciente?.idPaciente){
+                setDatospx(data);
+                if (data?.sisRpta?.exito=='1') {
+                    console.log("entro al sis")
+                    setValue('idIafa', 3)
+                }
+                else {
+                    console.log("entro al particular")
+                    setValue('idIafa', 5)
+                }
+            }else {
+                showAlert("Atencion", "paciente no encontrado.")
+            }
+            
             if (data?.paciente?.exito == '1' && data?.sis?.codError == '1001') {
                 showAlert("Atencion", "Paciente no posee SIS.")
             }
@@ -177,20 +191,9 @@ export const FormAdmision = (data: any) => {
                 AutoseleccionEstablecimiento(data?.sis?.eess.slice(-5))
             }
 
-            if (data?.paciente?.exito == '0') {
-                showAlert("Atencion", "paciente no encontrado.")
-            } else {
-                console.log("tipo de exito")
-                console.log(data?.sisRpta?.exito)
-                if (data?.sisRpta?.exito=='1') {
-                    setValue('idIafa', 3)
-                }
-                else {
-                    setValue('idIafa', 5)
-                }
-            }
             setbuttonLoading(false)
         } catch (error) {
+            setDatospx(null)
             setbuttonLoading(true)
             showAlert("Atencion", "DNI no encontrado.")
             setbuttonLoading(false)
@@ -209,8 +212,9 @@ export const FormAdmision = (data: any) => {
     }
 
     const AdmisionarPx: SubmitHandler<formAdmision> = async (formData: any) => {
-        console.log(formData)
-        /* setIsLoadingAdmisionar(true)
+
+ 
+         setIsLoadingAdmisionar(true)
          if (formData.idIafa === 3) {
              if (!formData?.idPaciente) {
                  showAlert("Atencion", "No se encuentra al paciente.")
@@ -283,7 +287,7 @@ export const FormAdmision = (data: any) => {
              }
  
          }
- */
+ /**/
 
     }
 
@@ -314,9 +318,6 @@ export const FormAdmision = (data: any) => {
         });
     }
 
-    useEffect(() => {
-        setSelectedValue('1');
-    }, [])
 
 
     const idIafaValue = watch('idIafa');
@@ -540,9 +541,11 @@ export const FormAdmision = (data: any) => {
 
 
                                                 return opcionFormateado.map((item: any) => (
+                                                    <>
                                                     <option key={item.idFuenteFinanciamiento} value={item.idFuenteFinanciamiento}>
                                                         {item.descripcion}
                                                     </option>
+                                                    </>
                                                 ));
                                             })()}
                                         </select>
