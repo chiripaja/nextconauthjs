@@ -1,4 +1,4 @@
-import { TriajeBusqueda } from "@/components/Triaje/TriajeBusqueda";
+
 import { TriajeDif } from '../../../components/TriajeDiferenciado/TriajeDif';
 
 export default function triajepage() {

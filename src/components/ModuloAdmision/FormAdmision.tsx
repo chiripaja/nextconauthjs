@@ -11,22 +11,32 @@ import { ModalGenerico } from "../ui/ModalGenerico";
 import { FiPrinter } from "react-icons/fi";
 import { AiOutlineLoading } from "react-icons/ai";
 import { TicketImpresion } from "./TicketImpresion";
+import { useSession } from "next-auth/react";
+
+import { RiDeleteBin6Line, RiH1 } from "react-icons/ri";
+
+
+
 
 type InputBusquedadDni = {
-    dni: string
+    dni: string,
+    tipodocumento: string,
 }
+
 type formAdmision = {
     idPaciente: number,
     idProgramacion: number,
     idIafa: number,
-    referenciaCodigo: string,
-    referenciaNumero: string
+    referenciaCodigo: any,
+    referenciaNumero: string,
+    esAdicional: number,
 }
 
 interface Establecimiento {
     value: string;
     label: string;
 }
+
 const showAlert = (title: any, html: any) => {
     Swal.fire({
         title: `<span>${title}</span>`,
@@ -34,6 +44,16 @@ const showAlert = (title: any, html: any) => {
         timer: 5000,
         timerProgressBar: true,
         icon: 'error',
+    });
+};
+
+const showAlertSuccess = (title: any, html: any) => {
+    Swal.fire({
+        title: `<span>${title}</span>`,
+        html: `<h5>${html}</h5>`,
+        timer: 5000,
+        timerProgressBar: true,
+        icon: 'success',
     });
 };
 const fetchOptions = async (establecimiento: string): Promise<Establecimiento[]> => {
@@ -53,6 +73,8 @@ const fetchOptions = async (establecimiento: string): Promise<Establecimiento[]>
 const fetchOptionsByCodigo = async (codigo: string): Promise<Establecimiento[]> => {
     try {
         const response = await axios.get(`${process.env.apiurl}/Totem/Establecimientos/${codigo}`);
+        console.log("**************************************")
+        console.log(response)
         return response.data.map((est: any) => ({
             value: est.codigo,
             label: est.nombre
@@ -64,12 +86,16 @@ const fetchOptionsByCodigo = async (codigo: string): Promise<Establecimiento[]> 
 };
 
 export const FormAdmision = (data: any) => {
+
+    const session = useSession();
+    const { ffFinanciamiento } = data;
+    const { consultorio } = data;
+    const { tipoDoc } = data;
+    const { usuario } = data;
     const [nearest, setNearest] = useState<any>(null);
     const [optionsCombo, setOptionsCombo] = useState<any[]>([]);
     const [inputValue, setInputValue] = useState<string>('');
     const [isLoading, setIsLoading] = useState<boolean>(false);
-    const { ffFinanciamiento } = data;
-    const { consultorio } = data;
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [datospx, setDatospx] = useState<any>();
     const [activeIndex, setActiveIndex] = useState(null);
@@ -79,13 +105,17 @@ export const FormAdmision = (data: any) => {
     const [cargandoLista, setCargandoLista] = useState(false)
     const [isLoadingAdmisionar, setIsLoadingAdmisionar] = useState(false);
     const [shouldPrint, setShouldPrint] = useState(false);
+    const [selectedValue, setSelectedValue] = useState<string>('');
 
     const loadOptions = useCallback(async (inputValue: string) => {
         setIsLoading(true);
         const fetchedOptions = await fetchOptions(inputValue);
         setOptionsCombo(fetchedOptions);
         setIsLoading(false);
+
     }, []);
+
+
 
     const openModal = () => {
         setIsModalOpen(true);
@@ -95,18 +125,22 @@ export const FormAdmision = (data: any) => {
         setIsModalOpen(false);
     };
 
-    const opcionesDNI = [
-        { id: 1, descripcion: "DNI" },
-        { id: 2, descripcion: "C.E." },
-    ];
-
     const verdata = async (data: any, index: any) => {
-        setCargandoLista(true)
-        setDatosConsultorio(data)
+        setCargandoLista(true);
+        setDatosConsultorio(data);
         setActiveIndex(index);
-        const dataPromagracion = await axios.get(`${process.env.apiurl}/Citados/${data?.idProgramacion}`)
-        setListadoProgramacion(dataPromagracion?.data.filter((data: any) => data?.idCuentaAtencion !== 0))
-        setCargandoLista(false)
+        cargarListadoProgramados(data?.idProgramacion);
+        setCargandoLista(false);
+    }
+
+    const cargarListadoProgramados = async (idprogramacion: any) => {
+        try {
+            const dataProgramacion = await axios.get(`${process.env.apiurl}/Citados/${idprogramacion}`);
+            const filteredData = dataProgramacion?.data.filter((data: any) => data?.idCuentaAtencion !== 0);
+            setListadoProgramacion(filteredData);
+        } catch (error) {
+            console.error("Error al cargar el listado programado:", error);
+        }
     }
 
     const {
@@ -128,101 +162,161 @@ export const FormAdmision = (data: any) => {
             setValue('idIafa', 0)
             setValue('referenciaNumero', "")
             setValue('referenciaCodigo', "")
-
             setbuttonLoading(true)
-            const { data }: any = await axios.get(`${process.env.apiurl}/Totem/SolicitaAdmitir?dni=${formdata.dni}&tipo=1`)
-            console.log(data?.sisRpta?.exito)
-
-            AutoseleccionEstablecimiento(data?.sis?.eess.slice(-5))
+            const { data }: any = await axios.get(`${process.env.apiurl}/Totem/SolicitaAdmitir?dni=${formdata?.dni}&tipo=${formdata?.tipodocumento}`)
             setDatospx(data);
-            if (data?.sisRpta?.exito) {
-                setValue('idIafa', 3)
+            if (data?.paciente?.exito == '1' && data?.sis?.codError == '1001') {
+                showAlert("Atencion", "Paciente no posee SIS.")
             }
-            else {
-                setValue('idIafa', 5)
+            else if (data?.paciente?.exito == '1' && data?.sis?.codError == '0000') {
+                showAlertSuccess("Atencion", "Paciente si posee SIS.")
+            } else if (data?.sis?.codError == '9001') {
+                showAlert("Atencion", "Consultas SIS esta fallando rellenar manual.")
+            }
+            if (data?.sis?.eess) {
+                AutoseleccionEstablecimiento(data?.sis?.eess.slice(-5))
+            }
+
+            if (data?.paciente?.exito == '0') {
+                showAlert("Atencion", "paciente no encontrado.")
+            } else {
+                console.log("tipo de exito")
+                console.log(data?.sisRpta?.exito)
+                if (data?.sisRpta?.exito=='1') {
+                    setValue('idIafa', 3)
+                }
+                else {
+                    setValue('idIafa', 5)
+                }
             }
             setbuttonLoading(false)
         } catch (error) {
             setbuttonLoading(true)
             showAlert("Atencion", "DNI no encontrado.")
             setbuttonLoading(false)
-        }
+            console.error('Error fetching data:', error);
+        }/**/
     }
 
     const AutoseleccionEstablecimiento = async (codigo: string) => {
         setIsLoading(true);
         const fetchedOptions = await fetchOptionsByCodigo(codigo);
         setOptionsCombo(fetchedOptions);
+        if (fetchedOptions.length > 0) {
+            setValue('referenciaCodigo', fetchedOptions[0]); // Auto-selección
+        }
         setIsLoading(false);
     }
 
-
-
-
-
     const AdmisionarPx: SubmitHandler<formAdmision> = async (formData: any) => {
-
-        setIsLoadingAdmisionar(true)
-
-        if (formData.idIafa === 3) {
-            if (!formData?.idPaciente) {
-                showAlert("Atencion", "Seleccionar paciente.")
-                setIsLoadingAdmisionar(false);
-            }
-            else if (!formData?.idProgramacion) {
-                showAlert("Atencion", "Seleccionar consultorio.")
-                setIsLoadingAdmisionar(false);
-            } else {
-                const convertedData = {
-                    ...formData,
-                    idIafa: parseInt(formData?.idIafa, 10),
-                    referenciaCodigo: formData?.referenciaCodigo?.value
-                };
-                try {
-                    const data = await axios.post(`${process.env.apiurl}/AdmisionGuardar`, convertedData);
-
-                    if (data?.data?.exito === '1') {
-                        showAlert("Atencion", data?.data?.mensaje)
-                    }
-                    else {
-                        showAlert("Atencion", data?.data?.mensaje)
-                    }
-
-                } catch (error) {
-                    console.log(error)
-                } finally {
-                    setIsLoadingAdmisionar(false);
-                }
-            }
-        } else {
-            if (!formData?.idPaciente) {
-                showAlert("Atencion", "Seleccionar paciente.")
-                setIsLoadingAdmisionar(false);
-            }
-            else if (!formData?.idProgramacion) {
-                showAlert("Atencion", "Seleccionar consultorio.")
-                setIsLoadingAdmisionar(false);
-            } else {
-                try {
-                    const data = await axios.post(`${process.env.apiurl}/AdmisionGuardar`, formData);
-                    if (data?.data?.exito === '1') {
-                        showAlert("Atencion", data?.data?.mensaje)
-                    }
-                    else {
-                        showAlert("Atencion", data?.data?.mensaje)
-                    }
-                } catch (error) {
-                    console.log(error)
-                } finally {
-                    setIsLoadingAdmisionar(false);
-                }
-            }
-
-        }
-
+        console.log(formData)
+        /* setIsLoadingAdmisionar(true)
+         if (formData.idIafa === 3) {
+             if (!formData?.idPaciente) {
+                 showAlert("Atencion", "No se encuentra al paciente.")
+                 setIsLoadingAdmisionar(false);
+             }
+             else if (!formData?.idProgramacion) {
+                 showAlert("Atencion", "Seleccionar consultorio.")
+                 setIsLoadingAdmisionar(false);
+             } else {
+                 try {
+                     const convertData = async () => {
+                         return {
+                             ...formData,
+                             idIafa: parseInt(formData?.idIafa, 10),
+                             referenciaCodigo: formData?.referenciaCodigo?.value,
+                             idUsuario: parseInt(usuario?.user?.id, 10),
+                             esAdicional: parseInt(formData?.esAdicional, 10),
+                         };
+                     };
+                     const convertedData = await convertData();
+ 
+                     const data = await axios.post(`${process.env.apiurl}/AdmisionGuardar`, convertedData);
+                     cargarListadoProgramados(convertedData?.idProgramacion)
+                     if (data?.data?.exito == '1') {
+                         impresionTicket(data?.data?.idCuentaAtencion)
+                     }
+                     else {
+                         showAlert("Atencion", data?.data?.mensaje)
+                     }
+                 } catch (error) {
+                     showAlert("Atencion", error)
+                 } finally {
+                     setIsLoadingAdmisionar(false);
+                 }
+             }
+         } else {
+             if (!formData?.idPaciente) {
+                 showAlert("Atencion", "Seleccionar paciente.")
+                 setIsLoadingAdmisionar(false);
+             }
+             else if (!formData?.idProgramacion) {
+                 showAlert("Atencion", "Seleccionar consultorio.")
+                 setIsLoadingAdmisionar(false);
+             } else {
+                 try {
+                     const convertData = async () => {
+                         return {
+                             ...formData,
+                             idIafa: parseInt(formData?.idIafa, 10),
+                             idUsuario: parseInt(usuario?.user?.id, 10),
+                             esAdicional: parseInt(formData?.esAdicional, 10),
+                         };
+                     };
+                     const convertedData = await convertData();
+ 
+                     const data = await axios.post(`${process.env.apiurl}/AdmisionGuardar`, convertedData);
+ 
+                     cargarListadoProgramados(convertedData?.idProgramacion)
+                     if (data?.data?.exito == '1') {
+                         impresionTicket(data?.data?.idCuentaAtencion)
+                     }
+                     else {
+                         showAlert("Atencion", data?.data?.mensaje)
+                     }
+                 } catch (error) {
+                     showAlert("Atencion", error)
+                 } finally {
+                     setIsLoadingAdmisionar(false);
+                 }
+             }
+ 
+         }
+ */
 
     }
 
+
+    const impresionTicket = async (numcuenta: any) => {
+        const { data } = await axios.get(`${process.env.apiurl}/TicketAdmision/${numcuenta}`)
+        await setNearest(data)
+        setShouldPrint(true);
+    }
+
+
+    const AnularCuenta = async (idcita: any, idprogramacion: any) => {
+        Swal.fire({
+            title: "¿Seguro que quieres eliminarlo?",
+            showDenyButton: true,
+            confirmButtonText: "Si",
+            denyButtonText: `No, Cancelar`
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    await axios.get(`${process.env.apiurl}/CitaAnula/${idcita}/${session?.data?.user.id}`);
+                    cargarListadoProgramados(idprogramacion)
+                    Swal.fire("Se eliminó la cuenta correctamente!", "", "success");
+                } catch (error) {
+                    Swal.fire("Hubo un error al eliminar la cuenta.", "", "error"); // Puedes agregar un mensaje de error
+                }
+            }
+        });
+    }
+
+    useEffect(() => {
+        setSelectedValue('1');
+    }, [])
 
 
     const idIafaValue = watch('idIafa');
@@ -259,32 +353,21 @@ export const FormAdmision = (data: any) => {
         }
     }, [datosConsultorio, setValue])
 
-
-
     const idIafa = watch('idIafa');
-    useEffect(() => {
-        // Aquí puedes hacer algo cada vez que 'idIafa' cambie
-        console.log('Valor seleccionado:', idIafa);
 
-        // Ejemplo: Actualizar otro campo basado en el valor seleccionado
+    useEffect(() => {
         if (idIafa) {
-            console.log("entro aca")
-            // Puedes hacer una solicitud, actualizar el estado, etc.
             setValue('referenciaCodigo', '');
             setValue('referenciaNumero', '');
         }
     }, [idIafa]);
 
 
-    const impresionTicket=async(numcuenta:any)=>{
-        const {data}=await axios.get(`${process.env.apiurl}/TicketAdmision/${numcuenta}`)
-        await setNearest(data)
-        setShouldPrint(true);
-    }
+
     useEffect(() => {
         if (shouldPrint && nearest) {
-            print(); // Imprime solo cuando shouldPrint es true y nearest tiene datos
-            setShouldPrint(false); // Resetea el estado para evitar impresiones accidentales
+            print();
+            setShouldPrint(false);
         }
     }, [nearest, shouldPrint]);
 
@@ -299,8 +382,12 @@ export const FormAdmision = (data: any) => {
 
 
 
+
+
+
     return (
         <>
+
 
             <div className="h-full bg-slate-400 md:bg-white p-3 print:hidden">
                 <div className="flex justify-center">
@@ -338,7 +425,9 @@ export const FormAdmision = (data: any) => {
                                 shadow-md cursor-pointer transition duration-300 ease-in-out transform hover:scale-105 hover:bg-yellow-200 hover:text-black rounded-lg p-6 m-2 h-32 flex items-center justify-center`}
                             >    <div className="text-center" >
                                     <div className="mt-2 text-sm ">
-                                        <p >{data.nombreServicio} ({data.cuposLibres})</p>
+                                        <p >{data.nombreServicio}
+                                            ({(data.cuposLibres >= 0) ? data.cuposLibres : 0})
+                                        </p>
                                         <p >{data.nombreMedico}</p>
                                         <p >{data.horaInicio} - {data.horaFin} </p>
                                     </div>
@@ -348,157 +437,185 @@ export const FormAdmision = (data: any) => {
                         ))
                     }
                 </div>
-                <form onSubmit={handleSubmit2(BuscadorDni)}>
 
-                    <div className="grid grid-cols-3 gap-2">
-                        <select
-                            // Asigna el ref al selec
-                            className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 }`}
-                        >
-                            {opcionesDNI.map(opcion => (
-                                <option key={opcion.id} value={opcion.id} disabled={opcion.id === 2}>
-                                    {opcion.descripcion}
-                                </option>
-                            ))}
-                        </select>
-
-                        <input
-                            type="number"
-                            className={`px-3 py-2 border border-gray-300 rounded-r-md focus:outline-none focus:ring-2 focus:ring-blue-500
-                                `}
-                            placeholder=""
-                            autoComplete="false"
-                            {...register2('dni', {
-                                required: 'Este campo es obligatorio',
-                                minLength: {
-                                    value: 8,
-                                    message: "El DNI debe tener al menos 8 dígitos"
-                                },
-                                maxLength: {
-                                    value: 8,
-                                    message: "El DNI no debe exceder los 8 dígitos"
-                                },
-                                pattern: {
-                                    value: /^[0-9]{8}$/,
-                                    message: "El DNI debe contener exactamente 8 dígitos numéricos"
-                                }
-                            })}
-                        />
-                        <style jsx>{`
-  input[type="number"]::-webkit-outer-spin-button,
-  input[type="number"]::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-  }
-
-  input[type="number"] {
-    -moz-appearance: textfield;
-  }
-`}</style>
-
-
-                        <button
-                            type="submit"
-                            className={` text-white py-2 px-4 rounded-r-md shadow focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 
-                                ${isValid2 ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-300 cursor-not-allowed'}
-                                ${buttonLoading ? 'bg-gray-300 cursor-not-allowed' : ''}
-                                `}
-                            disabled={!isValid2 || buttonLoading}
-                        >
-
-                            {!buttonLoading ? 'Buscar' : 'Cargando...'}
-
-                        </button>
-                        {errors2.dni && (
-                            <div className="text-red-500 text-sm mt-1 col-span-3 text-center">{errors2?.dni?.message}</div>
-                        )}
+                {(datosConsultorio?.cuposLibres <= 0) ? <>
+                    <div className="p-4 mb-4 text-sm text-red-700 rounded-lg bg-red-200 dark:bg-gray-800 dark:text-red-700" role="alert">
+                        <span className="font-medium">Atencion!</span> Estara admisionando una cita adicional
                     </div>
-                </form>
-                <input
-                    type="text"
-                    className=" px-3 mt-4 w-full py-2 border border-gray-300 rounded-r-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    defaultValue={datospx?.paciente?.apenom}
-                    disabled={true}
-                />
+                </> : <><div></div></>}
+                {datosConsultorio?.nombreServicio && (
+                    <>
+                        <form onSubmit={handleSubmit2(BuscadorDni)}>
 
-                <form onSubmit={handleSubmit(AdmisionarPx)}>
 
-                    <div className="grid grid-cols-2 gap-2 mt-3">
-                        <span className='text-center'>
-                            Financiamiento :
-                        </span>
-                        <select
+                            <div className="grid grid-cols-3 gap-2">
+                                <select
+                                    {...register2('tipodocumento')}
+                                    defaultValue="1"
+                                    // Asigna el ref al selec
+                                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 }`}
+                                >
 
-                            {...register('idIafa')}
-                            className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                        >
-                            {ffFinanciamiento && ffFinanciamiento.length > 0 && ffFinanciamiento.map((opcion: any) => {
-                                return (
-                                    <option key={opcion.idFuenteFinanciamiento} value={opcion.idFuenteFinanciamiento}>
-                                        {opcion.descripcion}
-                                    </option>
-                                );
-                            })}
-                        </select>
+                                    {tipoDoc && tipoDoc.length > 0 && tipoDoc.map((opcion: any) => {
+                                        return (
+                                            <option key={opcion.idDocIdentidad} value={opcion.codigoSIS}>
+                                                {opcion.descripcion}
+                                            </option>
+                                        );
+                                    })}
+                                </select>
 
-                    </div>
-
-                    {idIafaValue == 3 && (
-                        <div>
-                            <div className="grid grid-cols-1 gap-2 mt-3">
-                                <Controller
-                                    name="referenciaCodigo" // Nombre del campo en el formulario
-                                    control={control}
-                                    defaultValue="" // Valor predeterminado
-                                    render={({ field }) => (
-                                        <Select
-                                            inputId="select-establecimientos"
-                                            options={optionsCombo}
-                                            placeholder={isLoading ? 'Cargando...' : 'Seleccione un establecimiento'}
-                                            isSearchable={true}
-                                            isLoading={isLoading}
-                                            {...field}
-                                            onInputChange={setInputValue}
-                                            required={true}
-                                        />
-                                    )}
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-2 mt-3">
-                                <label className="text-center">Nro de Referencia : </label>
                                 <input
-                                    type="text"
-                                    className={`px-3 py-2 border rounded-r-md focus:outline-none focus:ring-2 
-${errors.referenciaNumero ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`}
+                                    type="number"
+                                    className={`px-3 py-2 border border-gray-300 rounded-r-md focus:outline-none focus:ring-2 focus:ring-blue-500
+                                 `}
                                     placeholder=""
-                                    {...register('referenciaNumero', { required: 'Este campo es obligatorio' })}
+                                    autoComplete="false"
+                                    {...register2('dni')}
                                 />
-                                <div className="text-red-500 col-span-3 text-center">
-                                    {errors.referenciaNumero && <span>{errors.referenciaNumero.message}</span>}
-                                </div>
+                                <style jsx>{`
+   input[type="number"]::-webkit-outer-spin-button,
+   input[type="number"]::-webkit-inner-spin-button {
+     -webkit-appearance: none;
+     margin: 0;
+   }
+ 
+   input[type="number"] {
+     -moz-appearance: textfield;
+   }
+ `}</style>
 
+
+                                <button
+                                    type="submit"
+                                    className={` text-white py-2 px-4 rounded-r-md shadow focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 
+                                 ${isValid2 ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-300 cursor-not-allowed'}
+                                 ${buttonLoading ? 'bg-gray-300 cursor-not-allowed' : ''}
+                                 `}
+                                    disabled={!isValid2 || buttonLoading}
+                                >
+
+                                    {!buttonLoading ? 'Buscar' : 'Cargando...'}
+
+                                </button>
+                                {errors2.dni && (
+                                    <div className="text-red-500 text-sm mt-1 col-span-3 text-center">{errors2?.dni?.message}</div>
+                                )}
                             </div>
-                        </div>
-                    )}
+                        </form>
+
+                        {datospx?.paciente?.idPaciente && (
+
+                            <>
+                                <div className="flex ">
+                                    <span className="border w-full text-center m-2 p-2">
+                                        {datospx?.paciente?.apenom}
+                                    </span>
+                                </div>
+                                <form onSubmit={handleSubmit(AdmisionarPx)}>
+                                    <input
+                                        type="text" className="hidden"
+                                        {...register('esAdicional')}
+                                        defaultValue={datosConsultorio?.cuposLibres <= 0 ? '1' : '0'}
+                                    />
+                                    <div className="grid grid-cols-2 gap-2 mt-3">
+                                        <span className='text-center'>
+                                            Financiamiento :
+                                        </span>
+                                        <select
+                                            {...register('idIafa')}
+                                            className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                                        >
+                                            {ffFinanciamiento && ffFinanciamiento.length > 0 && (() => {
+                                                let opcionFormateado;
+
+                                                // Verifica si data.idsis es igual a 1
+                                                if (datospx?.sisRpta?.exito == "1") { // Cambia `true` a la condición real que necesitas
+                                                    // Filtra el arreglo basado en la condición
+                                                    opcionFormateado = ffFinanciamiento.filter((data: any) => data.idFuenteFinanciamiento === 3);
+                                                } else {
+                                                    // Muestra todo el arreglo
+                                                    opcionFormateado = ffFinanciamiento;
+                                                }
+
+
+                                                return opcionFormateado.map((item: any) => (
+                                                    <option key={item.idFuenteFinanciamiento} value={item.idFuenteFinanciamiento}>
+                                                        {item.descripcion}
+                                                    </option>
+                                                ));
+                                            })()}
+                                        </select>
+                                    </div>
+
+
+                                    {idIafaValue == 3 && (
+                                        <div>
+                                            <div className="grid grid-cols-1 gap-2 mt-3">
+                                                <Controller
+                                                    name="referenciaCodigo" // Nombre del campo en el formulario
+                                                    control={control}
+                                                    defaultValue="" // Valor predeterminado
+                                                    render={({ field }) => (
+                                                        <Select
+                                                            inputId="select-establecimientos"
+                                                            options={optionsCombo}
+                                                            placeholder={isLoading ? 'Cargando...' : 'Seleccione un establecimiento'}
+                                                            isSearchable={true}
+                                                            isLoading={isLoading}
+                                                            {...field}
+                                                            onInputChange={setInputValue}
+
+                                                        />
+                                                    )}
+                                                />
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-2 mt-3">
+                                                <label className="text-center">Nro de Referencia : </label>
+                                                <input
+                                                    type="text"
+                                                    className={`px-3 py-2 border rounded-r-md focus:outline-none focus:ring-2 
+${errors.referenciaNumero ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`}
+                                                    placeholder=""
+                                                    {...register('referenciaNumero', { required: 'Este campo es obligatorio' })}
+                                                />
+                                                <div className="text-red-500 col-span-3 text-center">
+                                                    {errors.referenciaNumero && <span>{errors.referenciaNumero.message}</span>}
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    )}
 
 
 
 
 
-                    <div className="flex justify-center mt-4">
-                        <button
-                            type="submit"
-                            className={`flex justify-center items-center ${isLoadingAdmisionar ? 'bg-gray-400 cursor-not-allowed' : 'bg-amber-500 hover:bg-amber-600'} text-white rounded shadow focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 w-1/2 h-12`}
-                            disabled={isLoadingAdmisionar}
-                        >
+                                    <div className="flex justify-center mt-4">
+                                        <button
+                                            type="submit"
+                                            className={`flex justify-center items-center ${isLoadingAdmisionar ? 'bg-gray-400 cursor-not-allowed' : 'bg-amber-500 hover:bg-amber-600'} text-white rounded shadow focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 w-1/2 h-12`}
+                                            disabled={isLoadingAdmisionar}
+                                        >
 
-                            {isLoadingAdmisionar ? <AiOutlineLoading className="animate-spin" /> : <FaPlus />} &nbsp;
-                            {isLoadingAdmisionar ? 'Cargando...' : 'Admisionar'}
+                                            {isLoadingAdmisionar ? <AiOutlineLoading className="animate-spin" /> : <FaPlus />} &nbsp;
+                                            {isLoadingAdmisionar ? 'Cargando...' : 'Admisionar'}
 
-                        </button>
-                    </div>
-                </form>
+                                        </button>
+                                    </div>
+                                </form>
+
+
+
+                            </>
+
+                        )}
+
+                    </>
+                )}
+
+
                 {(datosConsultorio?.nombre_Medico || datospx?.paciente?.idPaciente) && (
                     <div className="max-w-xs mt-3 mx-auto bg-white border border-dashed border-gray-300 p-4 rounded-lg shadow-md text-sm font-mono">
                         <div className="text-center mb-4">
@@ -549,6 +666,7 @@ ${errors.referenciaNumero ? 'border-red-500 focus:ring-red-500' : 'border-gray-3
                                                     <th scope="col" className="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase dark:text-neutral-500">Cuenta</th>
                                                     <th scope="col" className="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase dark:text-neutral-500">Hora</th>
                                                     <th scope="col" className="px-6 py-3 text-end text-xs font-medium text-gray-500 uppercase dark:text-neutral-500">Acción</th>
+                                                    <th scope="col" className="px-6 py-3 text-end text-xs font-medium text-gray-500 uppercase dark:text-neutral-500">Eliminar</th>
                                                 </tr>
                                             </thead>
 
@@ -568,13 +686,17 @@ ${errors.referenciaNumero ? 'border-red-500 focus:ring-red-500' : 'border-gray-3
                                                                 {datalista?.horaInicio} - {datalista?.horaFin}
                                                             </td>
                                                             <td className="px-6 py-4 whitespace-nowrap text-end text-sm font-medium">
-
-
-                                                                <button type="button" onClick={()=>impresionTicket(datalista?.idCuentaAtencion)} className="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none">
+                                                                <button type="button" onClick={() => impresionTicket(datalista?.idCuentaAtencion)} className="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none">
                                                                     <FiPrinter />
                                                                     Imprimir
                                                                 </button>
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap text-end text-sm font-medium">
 
+                                                                <button type="button" onClick={() => AnularCuenta(datalista?.idCita, datalista?.idProgramacion)} className="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:bg-red-700 disabled:opacity-50 disabled:pointer-events-none">
+                                                                    <RiDeleteBin6Line />
+                                                                    Anular
+                                                                </button>
                                                             </td>
                                                         </tr>
                                                     );
