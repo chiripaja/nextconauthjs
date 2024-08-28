@@ -14,10 +14,6 @@ import { TicketImpresion } from "./TicketImpresion";
 import { useSession } from "next-auth/react";
 import { RiDeleteBin6Line, RiH1 } from "react-icons/ri";
 
-
-
-
-
 type InputBusquedadDni = {
     dni: string,
     tipodocumento: string,
@@ -65,7 +61,7 @@ const fetchOptions = async (establecimiento: string): Promise<Establecimiento[]>
             label: est.nombre
         }));
     } catch (error) {
-        console.error('Error fetching options', error);
+        console.error(error);
         return [];
     }
 };
@@ -79,13 +75,13 @@ const fetchOptionsByCodigo = async (codigo: string): Promise<Establecimiento[]> 
             label: est.nombre
         }));
     } catch (error) {
-        console.error('Error fetching options', error);
+        console.error(error);
         return [];
     }
 };
 
 export const FormAdmision = (data: any) => {
-
+    
     const session = useSession();
     const { ffFinanciamiento } = data;
     const { consultorio } = data;
@@ -104,6 +100,7 @@ export const FormAdmision = (data: any) => {
     const [cargandoLista, setCargandoLista] = useState(false)
     const [isLoadingAdmisionar, setIsLoadingAdmisionar] = useState(false);
     const [shouldPrint, setShouldPrint] = useState(false);
+    const [enableNewUser, setEnableNewUser] = useState(false);
 
     const loadOptions = useCallback(async (inputValue: string) => {
         setIsLoading(true);
@@ -112,8 +109,6 @@ export const FormAdmision = (data: any) => {
         setIsLoading(false);
 
     }, []);
-
-
 
     const openModal = () => {
         setIsModalOpen(true);
@@ -138,6 +133,7 @@ export const FormAdmision = (data: any) => {
             setListadoProgramacion(filteredData);
         } catch (error) {
             console.error("Error al cargar el listado programado:", error);
+            console.error(error);
         }
     }
 
@@ -154,25 +150,21 @@ export const FormAdmision = (data: any) => {
 
     const { control, register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<formAdmision>();
 
-
     const BuscadorDni: SubmitHandler<InputBusquedadDni> = async (formdata) => {
+        setEnableNewUser(false)
         try {
-        
             setDatospx(null)
             setValue('idIafa', "")
             setValue('referenciaNumero', "")
             setValue('referenciaCodigo', "")
             setbuttonLoading(true)
             const { data }: any = await axios.get(`${process.env.apiurl}/Totem/SolicitaAdmitir?dni=${formdata?.dni}&tipo=${formdata?.tipodocumento}`)
-            console.log(data)
             if(data?.paciente?.idPaciente){
                 setDatospx(data);
                 if (data?.sisRpta?.exito=='1') {
-                    console.log("entro al sis")
                     setValue('idIafa', 3)
                 }
                 else {
-                    console.log("entro al particular")
                     setValue('idIafa', 5)
                 }
             }else {
@@ -188,16 +180,16 @@ export const FormAdmision = (data: any) => {
                 showAlert("Atencion", "Consultas SIS esta fallando rellenar manual.")
             }
             if (data?.sis?.eess) {
-                AutoseleccionEstablecimiento(data?.sis?.eess.slice(-5))
+                await AutoseleccionEstablecimiento(data?.sis?.eess.slice(-5))
             }
-
             setbuttonLoading(false)
         } catch (error) {
             setDatospx(null)
             setbuttonLoading(true)
+            setEnableNewUser(true)
             showAlert("Atencion", "DNI no encontrado.")
             setbuttonLoading(false)
-            console.error('Error fetching data:', error);
+            console.error(error);
         }
     }
 
@@ -244,7 +236,8 @@ export const FormAdmision = (data: any) => {
                          showAlert("Atencion", data?.data?.mensaje)
                      }
                  } catch (error) {
-                     showAlert("Atencion", error)
+                     showAlert("Atencion", error);
+                     console.error(error);
                  } finally {
                      setIsLoadingAdmisionar(false);
                  }
@@ -280,7 +273,8 @@ export const FormAdmision = (data: any) => {
                          showAlert("Atencion", data?.data?.mensaje)
                      }
                  } catch (error) {
-                     showAlert("Atencion", error)
+                     showAlert("Atencion", error);
+                     console.error(error);
                  } finally {
                      setIsLoadingAdmisionar(false);
                  }
@@ -288,13 +282,11 @@ export const FormAdmision = (data: any) => {
          }
     }
 
-
     const impresionTicket = async (numcuenta: any) => {
         const { data } = await axios.get(`${process.env.apiurl}/TicketAdmision/${numcuenta}`)
         await setNearest(data)
         setShouldPrint(true);
     }
-
 
     const AnularCuenta = async (idcita: any, idprogramacion: any) => {
         Swal.fire({
@@ -309,7 +301,8 @@ export const FormAdmision = (data: any) => {
                     cargarListadoProgramados(idprogramacion)
                     Swal.fire("Se eliminó la cuenta correctamente!", "", "success");
                 } catch (error) {
-                    Swal.fire("Hubo un error al eliminar la cuenta.", "", "error"); // Puedes agregar un mensaje de error
+                    Swal.fire("Hubo un error al eliminar la cuenta.", "", "error"); 
+                    console.error(error);
                 }
             }
         });
@@ -322,7 +315,6 @@ export const FormAdmision = (data: any) => {
         reset();
         setActiveIndex(null);
     }
-
 
     const selectedTipoDocumento = watch2('tipodocumento', '1');
     const dniValue = watch2('dni', '');
@@ -342,7 +334,6 @@ export const FormAdmision = (data: any) => {
         }
     }, [inputValue, loadOptions]);
 
-
     useEffect(() => {
         setActiveIndex(null);
         setDatosConsultorio(null);
@@ -358,15 +349,12 @@ export const FormAdmision = (data: any) => {
         }
     }, [datospx, setValue]);
 
-
-
     useEffect(() => {
         if (datosConsultorio?.idProgramacion) {
             setValue('idProgramacion', datosConsultorio?.idProgramacion)
         }
     }, [datosConsultorio, setValue])
 
-    
     const idIafa = watch('idIafa');
     useEffect(() => {
         if (idIafa) {
@@ -375,18 +363,12 @@ export const FormAdmision = (data: any) => {
         }
     }, [idIafa]);
 
-
-
     useEffect(() => {
         if (shouldPrint && nearest) {
             print();
             setShouldPrint(false);
         }
     }, [nearest, shouldPrint]);
-
-
-
-
 
     if (data === null || data.consultorio === undefined) {
         return (
@@ -397,21 +379,18 @@ export const FormAdmision = (data: any) => {
         );
     }
 
-
-
-
-
-
     return (
         <>
             <div className="h-full bg-slate-400 md:bg-white p-3 print:hidden">
-                <div className="flex justify-center">
-                    <button
-                        className="hidden py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:bg-blue-700"
+                <div className="flex justify-center">                   
+                    {enableNewUser && (
+                        <button
+                        className="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:bg-blue-700"
                         onClick={openModal}
                     >
                         Nuevo Paciente
                     </button>
+                    )}                    
                     <ModalGenerico isOpen={isModalOpen} onClose={closeModal}>
                         <h3 className="text-lg font-semibold text-gray-900">Modal Title</h3>
                         <div className="mt-4 text-sm text-gray-600">
@@ -427,8 +406,6 @@ export const FormAdmision = (data: any) => {
                         </div>
                     </ModalGenerico>
                 </div>
-
-
                 <div className="grid grid-cols-2 mt-3 gap-2">
                     {
                         consultorio?.map((data: any, index: number) => (
@@ -447,16 +424,14 @@ export const FormAdmision = (data: any) => {
                                     </div>
                                 </div>
                             </div>
-
                         ))
                     }
                 </div>
-
                 {(datosConsultorio?.cuposLibres <= 0) ? <>
                     <div className="p-4 mb-4 text-sm text-red-700 rounded-lg bg-red-200 dark:bg-gray-800 dark:text-red-700" role="alert">
                         <span className="font-medium">Atencion!</span> Estara admisionando una cita adicional
                     </div>
-                </> : <><div></div></>}
+                </> : <></>}
                 {datosConsultorio?.nombreServicio && (
                     <>
                         <form onSubmit={handleSubmit2(BuscadorDni)}>
@@ -515,9 +490,7 @@ export const FormAdmision = (data: any) => {
                                 )}
                             </div>
                         </form>
-
                         {datospx?.paciente?.idPaciente && (
-
                             <>
                                 <div className="flex ">
                                     <span className="border w-full text-center m-2 p-2">
@@ -617,21 +590,13 @@ ${errors.referenciaNumero ? 'border-red-500 focus:ring-red-500' : 'border-gray-3
                                         </button>
                                     </div>
                                 </form>
-
-
-
                             </>
-
                         )}
-
                     </>
                 )}
-
-
                 {(datosConsultorio?.nombre_Medico || datospx?.paciente?.idPaciente) && (
                     <div className="max-w-xs mt-3 mx-auto bg-white border border-dashed border-gray-300 p-4 rounded-lg shadow-md text-sm font-mono">
                         <div className="text-center mb-4">
-
                             <p className="font-bold">Ticket de Cita</p>
                         </div>
                         <div className="mb-2">
@@ -653,10 +618,6 @@ ${errors.referenciaNumero ? 'border-red-500 focus:ring-red-500' : 'border-gray-3
                         </div>
                     </div>
                 )}
-
-
-                {/* tabla lista programados */}
-
                 <div className="flex flex-col mt-4">
                     <div className="-m-1.5 overflow-x-auto">
                         <div className="p-1.5 min-w-full inline-block align-middle">
@@ -681,11 +642,9 @@ ${errors.referenciaNumero ? 'border-red-500 focus:ring-red-500' : 'border-gray-3
                                                     <th scope="col" className="px-6 py-3 text-end text-xs font-medium text-gray-500 uppercase dark:text-neutral-500">Eliminar</th>
                                                 </tr>
                                             </thead>
-
                                             <tbody className="divide-y divide-gray-200 dark:divide-neutral-700">
                                                 {listadoProgramacion.map((datalista: any) => {
                                                     const isCuentaAtencionNotZero = datalista?.idCuentaAtencion !== 0;
-
                                                     return (
                                                         <tr key={datalista?.idCita} className={isCuentaAtencionNotZero ? '' : 'bg-yellow-100'}>
                                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800 dark:text-neutral-200">
@@ -721,13 +680,10 @@ ${errors.referenciaNumero ? 'border-red-500 focus:ring-red-500' : 'border-gray-3
                         </div>
                     </div>
                 </div>
-
             </div>
-
             {nearest && (
                 <TicketImpresion Datos={nearest} />
             )}
-
         </>
     )
 }
