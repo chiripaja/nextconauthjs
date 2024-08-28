@@ -16,7 +16,7 @@ import { RiDeleteBin6Line, RiH1 } from "react-icons/ri";
 
 type InputBusquedadDni = {
     dni: string,
-    tipodocumento: string,
+    idDocIdentidad: string,
 }
 
 type formAdmision = {
@@ -81,7 +81,6 @@ const fetchOptionsByCodigo = async (codigo: string): Promise<Establecimiento[]> 
 };
 
 export const FormAdmision = (data: any) => {
-    
     const session = useSession();
     const { ffFinanciamiento } = data;
     const { consultorio } = data;
@@ -158,7 +157,7 @@ export const FormAdmision = (data: any) => {
             setValue('referenciaNumero', "")
             setValue('referenciaCodigo', "")
             setbuttonLoading(true)
-            const { data }: any = await axios.get(`${process.env.apiurl}/Totem/SolicitaAdmitir?dni=${formdata?.dni}&tipo=${formdata?.tipodocumento}`)
+            const { data }: any = await axios.get(`${process.env.apiurl}/Totem/SolicitaAdmitir?dni=${formdata?.dni}&idDocIdentidad=${formdata?.idDocIdentidad}`)
             if(data?.paciente?.idPaciente){
                 setDatospx(data);
                 if (data?.sisRpta?.exito=='1') {
@@ -168,6 +167,7 @@ export const FormAdmision = (data: any) => {
                     setValue('idIafa', 5)
                 }
             }else {
+                setEnableNewUser(true)
                 showAlert("Atencion", "paciente no encontrado.")
             }
             
@@ -316,7 +316,7 @@ export const FormAdmision = (data: any) => {
         setActiveIndex(null);
     }
 
-    const selectedTipoDocumento = watch2('tipodocumento', '1');
+    const selectedTipoDocumento = watch2('idDocIdentidad', '1');
     const dniValue = watch2('dni', '');
     useEffect(() => {
         if (selectedTipoDocumento === '1' && dniValue.length > 8) {
@@ -428,7 +428,7 @@ export const FormAdmision = (data: any) => {
                     }
                 </div>
                 {(datosConsultorio?.cuposLibres <= 0) ? <>
-                    <div className="p-4 mb-4 text-sm text-red-700 rounded-lg bg-red-200 dark:bg-gray-800 dark:text-red-700" role="alert">
+                    <div className="p-4 mb-4 mt-3 text-sm text-red-700 rounded-lg bg-red-200 dark:bg-gray-800 dark:text-red-700" role="alert">
                         <span className="font-medium">Atencion!</span> Estara admisionando una cita adicional
                     </div>
                 </> : <></>}
@@ -437,13 +437,13 @@ export const FormAdmision = (data: any) => {
                         <form onSubmit={handleSubmit2(BuscadorDni)}>
                             <div className="grid grid-cols-3 gap-2">
                                 <select
-                                    {...register2('tipodocumento')}
+                                    {...register2('idDocIdentidad')}
                                     defaultValue="1"
                                     className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 }`}
                                 >
                                     {tipoDoc && tipoDoc.length > 0 && tipoDoc.map((opcion: any) => {
                                         return (
-                                            <option key={opcion.idDocIdentidad} value={opcion.codigoSIS}>
+                                            <option key={opcion.idDocIdentidad} value={opcion.idDocIdentidad}>
                                                 {opcion.descripcion}
                                             </option>
                                         );
@@ -663,7 +663,6 @@ ${errors.referenciaNumero ? 'border-red-500 focus:ring-red-500' : 'border-gray-3
                                                                 </button>
                                                             </td>
                                                             <td className="px-6 py-4 whitespace-nowrap text-end text-sm font-medium">
-
                                                                 <button type="button" onClick={() => AnularCuenta(datalista?.idCita, datalista?.idProgramacion)} className="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:bg-red-700 disabled:opacity-50 disabled:pointer-events-none">
                                                                     <RiDeleteBin6Line />
                                                                     Anular
