@@ -63,30 +63,7 @@ export default function PruebaPage() {
         <input {...register('dni')} placeholder="Ingrese DNI" required />
       </div>
 
-      <div>
-        <label>Tipo de Documento:</label>
-        <input {...register('tipodocumento')} placeholder="Tipo de Documento" required />
-      </div>
-
-      <div>
-        <Controller
-          name="referenciaCodigo"
-          control={control}
-          defaultValue="" // Valor predeterminado
-          render={({ field }) => (
-            <Select
-              inputId="select-establecimientos"
-              options={optionsCombo}
-              placeholder={isLoading ? 'Cargando...' : 'Seleccione un establecimiento'}
-              isSearchable={true}
-              isLoading={isLoading}
-              {...field}
-              required={true}
-            />
-          )}
-        />
-      </div>
-
+     
       <button type="submit">Buscar y Auto-completar</button>
     </form>
   );

@@ -1,6 +1,6 @@
 'use client'
+
 import { useCallback, useEffect, useState } from "react";
-import { SelectTriaje } from "../ui/SelectTriaje";
 import { FaPlus } from "react-icons/fa";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import axios from "axios";
@@ -12,9 +12,8 @@ import { FiPrinter } from "react-icons/fi";
 import { AiOutlineLoading } from "react-icons/ai";
 import { TicketImpresion } from "./TicketImpresion";
 import { useSession } from "next-auth/react";
-
 import { RiDeleteBin6Line, RiH1 } from "react-icons/ri";
-import { json } from "stream/consumers";
+
 
 
 
@@ -57,6 +56,7 @@ const showAlertSuccess = (title: any, html: any) => {
         icon: 'success',
     });
 };
+
 const fetchOptions = async (establecimiento: string): Promise<Establecimiento[]> => {
     try {
         const response = await axios.get(`${process.env.apiurl}/Establecimientos/${establecimiento}`);
@@ -157,14 +157,14 @@ export const FormAdmision = (data: any) => {
 
     const BuscadorDni: SubmitHandler<InputBusquedadDni> = async (formdata) => {
         try {
-            console.log(formdata)
+        
             setDatospx(null)
             setValue('idIafa', "")
             setValue('referenciaNumero', "")
             setValue('referenciaCodigo', "")
             setbuttonLoading(true)
             const { data }: any = await axios.get(`${process.env.apiurl}/Totem/SolicitaAdmitir?dni=${formdata?.dni}&tipo=${formdata?.tipodocumento}`)
-         
+            console.log(data)
             if(data?.paciente?.idPaciente){
                 setDatospx(data);
                 if (data?.sisRpta?.exito=='1') {
@@ -198,7 +198,7 @@ export const FormAdmision = (data: any) => {
             showAlert("Atencion", "DNI no encontrado.")
             setbuttonLoading(false)
             console.error('Error fetching data:', error);
-        }/**/
+        }
     }
 
     const AutoseleccionEstablecimiento = async (codigo: string) => {
@@ -206,14 +206,12 @@ export const FormAdmision = (data: any) => {
         const fetchedOptions = await fetchOptionsByCodigo(codigo);
         setOptionsCombo(fetchedOptions);
         if (fetchedOptions.length > 0) {
-            setValue('referenciaCodigo', fetchedOptions[0]); // Auto-selección
+            setValue('referenciaCodigo', fetchedOptions[0]); 
         }
         setIsLoading(false);
     }
 
-    const AdmisionarPx: SubmitHandler<formAdmision> = async (formData: any) => {
-
- 
+    const AdmisionarPx: SubmitHandler<formAdmision> = async (formData: any) => {       
          setIsLoadingAdmisionar(true)
          if (formData.idIafa === 3) {
              if (!formData?.idPaciente) {
@@ -239,7 +237,8 @@ export const FormAdmision = (data: any) => {
                      const data = await axios.post(`${process.env.apiurl}/AdmisionGuardar`, convertedData);
                      cargarListadoProgramados(convertedData?.idProgramacion)
                      if (data?.data?.exito == '1') {
-                         impresionTicket(data?.data?.idCuentaAtencion)
+                         limpiarCampos();
+                         impresionTicket(data?.data?.idCuentaAtencion);                         
                      }
                      else {
                          showAlert("Atencion", data?.data?.mensaje)
@@ -274,7 +273,8 @@ export const FormAdmision = (data: any) => {
  
                      cargarListadoProgramados(convertedData?.idProgramacion)
                      if (data?.data?.exito == '1') {
-                         impresionTicket(data?.data?.idCuentaAtencion)
+                        limpiarCampos();
+                        impresionTicket(data?.data?.idCuentaAtencion);                         
                      }
                      else {
                          showAlert("Atencion", data?.data?.mensaje)
@@ -284,11 +284,8 @@ export const FormAdmision = (data: any) => {
                  } finally {
                      setIsLoadingAdmisionar(false);
                  }
-             }
- 
+             } 
          }
- /**/
-
     }
 
 
@@ -318,7 +315,22 @@ export const FormAdmision = (data: any) => {
         });
     }
 
+    const limpiarCampos=()=>{   
+        setDatosConsultorio(null);    
+        setDatospx(null);
+        reset2();
+        reset();
+        setActiveIndex(null);
+    }
 
+
+    const selectedTipoDocumento = watch2('tipodocumento', '1');
+    const dniValue = watch2('dni', '');
+    useEffect(() => {
+        if (selectedTipoDocumento === '1' && dniValue.length > 8) {
+          setValue2('dni', dniValue.slice(0, 8)); // Limita el valor a 8 dígitos
+        }
+      }, [selectedTipoDocumento, dniValue, setValue2]);
 
     const idIafaValue = watch('idIafa');
 
@@ -338,7 +350,7 @@ export const FormAdmision = (data: any) => {
         reset2();
         reset();
         setListadoProgramacion([]);
-    }, [data])
+    }, [consultorio])
 
     useEffect(() => {
         if (datospx?.paciente?.idPaciente) {
@@ -354,8 +366,8 @@ export const FormAdmision = (data: any) => {
         }
     }, [datosConsultorio, setValue])
 
+    
     const idIafa = watch('idIafa');
-
     useEffect(() => {
         if (idIafa) {
             setValue('referenciaCodigo', '');
@@ -371,6 +383,10 @@ export const FormAdmision = (data: any) => {
             setShouldPrint(false);
         }
     }, [nearest, shouldPrint]);
+
+
+
+
 
     if (data === null || data.consultorio === undefined) {
         return (
@@ -388,13 +404,10 @@ export const FormAdmision = (data: any) => {
 
     return (
         <>
-
-
             <div className="h-full bg-slate-400 md:bg-white p-3 print:hidden">
                 <div className="flex justify-center">
-
                     <button
-                        className="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:bg-blue-700"
+                        className="hidden py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:bg-blue-700"
                         onClick={openModal}
                     >
                         Nuevo Paciente
@@ -447,16 +460,12 @@ export const FormAdmision = (data: any) => {
                 {datosConsultorio?.nombreServicio && (
                     <>
                         <form onSubmit={handleSubmit2(BuscadorDni)}>
-
-
                             <div className="grid grid-cols-3 gap-2">
                                 <select
                                     {...register2('tipodocumento')}
                                     defaultValue="1"
-                                    // Asigna el ref al selec
                                     className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 }`}
                                 >
-
                                     {tipoDoc && tipoDoc.length > 0 && tipoDoc.map((opcion: any) => {
                                         return (
                                             <option key={opcion.idDocIdentidad} value={opcion.codigoSIS}>
@@ -467,13 +476,15 @@ export const FormAdmision = (data: any) => {
                                 </select>
 
                                 <input
-                                    type="number"
-                                    className={`px-3 py-2 border border-gray-300 rounded-r-md focus:outline-none focus:ring-2 focus:ring-blue-500
-                                 `}
-                                    placeholder=""
-                                    autoComplete="false"
-                                    {...register2('dni')}
-                                />
+        type="number"
+        className="px-3 py-2 border border-gray-300 rounded-r-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        placeholder=""
+        autoComplete="off"
+        maxLength={selectedTipoDocumento === '1' ? 8 : undefined}
+        {...register2('dni', {
+          maxLength: selectedTipoDocumento === '1' ? 8 : undefined,
+        })}
+      />
                                 <style jsx>{`
    input[type="number"]::-webkit-outer-spin-button,
    input[type="number"]::-webkit-inner-spin-button {
@@ -540,12 +551,10 @@ export const FormAdmision = (data: any) => {
                                                 }
 
 
-                                                return opcionFormateado.map((item: any) => (
-                                                    <>
+                                                return opcionFormateado.map((item: any) => (                                                   
                                                     <option key={item.idFuenteFinanciamiento} value={item.idFuenteFinanciamiento}>
-                                                        {item.descripcion}
-                                                    </option>
-                                                    </>
+                                                         {item.descripcion}
+                                                    </option>                                                   
                                                 ));
                                             })()}
                                         </select>
